@@ -1,0 +1,480 @@
+<!--
+  ╔══════════════════════════════════════════════════════════╗
+  ║  VERIFY PASSPORT DATA — self-contained snippet           ║
+  ║  Drop this block anywhere in your portal page.           ║
+  ║  All CSS is scoped to #vpd-wrap — nothing leaks out.     ║
+  ╚══════════════════════════════════════════════════════════╝
+-->
+
+<!-- ① Scoped styles — every rule is prefixed with #vpd-wrap -->
+<style>
+  /* ── Shell ── */
+  #vpd-wrap {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-width: 860px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 4px 24px rgba(0,0,0,.12);
+  }
+
+  /* ── Header ── */
+  #vpd-wrap .vpd-header {
+    border-bottom: 1px solid #ddd;
+    padding: 14px 20px;
+    text-align: center;
+    position: relative;
+  }
+  #vpd-wrap .vpd-title {
+    font-size: .9rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  #vpd-wrap .vpd-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: #333;
+    cursor: pointer;
+    padding: 0;
+  }
+  #vpd-wrap .vpd-close:hover { color: #000; }
+
+  /* ── Body ── */
+  #vpd-wrap .vpd-body {
+    padding: 24px 28px 20px;
+  }
+
+  /* ── Logged-in bar ── */
+  #vpd-wrap .vpd-loggedin {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 5px 10px;
+    font-size: .78rem;
+    color: #666;
+    margin-bottom: 16px;
+  }
+  #vpd-wrap .vpd-loggedin span {
+    font-weight: 600;
+    color: #333;
+  }
+
+  /* ── Labels ── */
+  #vpd-wrap .form-label {
+    font-size: .78rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #333;
+  }
+
+  /* ── Inputs & selects ── */
+  #vpd-wrap .form-control,
+  #vpd-wrap .form-select {
+    font-size: .82rem;
+    border-radius: 3px;
+    border-color: #bbb;
+    padding: 5px 10px;
+    height: 34px;
+  }
+  #vpd-wrap .form-control:focus,
+  #vpd-wrap .form-select:focus {
+    border-color: #666;
+    box-shadow: 0 0 0 .15rem rgba(0,0,0,.1);
+  }
+
+  /* ── Date wrapper ── */
+  #vpd-wrap .vpd-date-wrap {
+    position: relative;
+  }
+  #vpd-wrap .vpd-date-wrap .form-control {
+    padding-right: 32px;
+  }
+  #vpd-wrap .vpd-date-wrap .bi-calendar3 {
+    position: absolute;
+    right: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: .85rem;
+    color: #555;
+    pointer-events: none;
+  }
+  /* Hide Chrome's native calendar arrow — only within this container */
+  #vpd-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    width: 32px;
+    height: 100%;
+    cursor: pointer;
+  }
+
+  /* ── Validation feedback ── */
+  #vpd-wrap .invalid-feedback {
+    font-size: .72rem;
+  }
+  #vpd-wrap .form-control.is-invalid,
+  #vpd-wrap .form-select.is-invalid {
+    border-color: #dc3545;
+    background-image: none;
+    padding-right: 10px;
+  }
+
+  /* ── Column dividers ── */
+  #vpd-wrap .vpd-col-divider {
+    border-left: 1px solid #e5e5e5;
+  }
+
+  /* ── Right-panel description ── */
+  #vpd-wrap .vpd-desc {
+    font-size: .75rem;
+    color: #555;
+    line-height: 1.5;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  /* ── Passport photo placeholder ── */
+  #vpd-wrap .vpd-photo {
+    border: 1px solid #bbb;
+    background: #f8f8f8;
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  #vpd-wrap .vpd-photo::before,
+  #vpd-wrap .vpd-photo::after {
+    content: '';
+    position: absolute;
+    width: 140%;
+    height: 1px;
+    background: #bbb;
+    top: 50%;
+    left: -20%;
+  }
+  #vpd-wrap .vpd-photo::before { transform: rotate(35deg); }
+  #vpd-wrap .vpd-photo::after  { transform: rotate(-35deg); }
+  #vpd-wrap .vpd-photo.has-image::before,
+  #vpd-wrap .vpd-photo.has-image::after { display: none; }
+  #vpd-wrap .vpd-photo img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* ── Save button ── */
+  #vpd-wrap .vpd-btn-save {
+    background: #d0d0d0;
+    border: 1px solid #aaa;
+    color: #333;
+    font-size: .8rem;
+    padding: 5px 26px;
+    border-radius: 3px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  #vpd-wrap .vpd-btn-save:hover {
+    background: #b8b8b8;
+    border-color: #888;
+    color: #111;
+  }
+</style>
+
+<!-- ② Markup — the single root is #vpd-wrap -->
+<div id="vpd-wrap">
+
+  <!-- Header -->
+  <div class="vpd-header">
+    <h6 class="vpd-title">Verify Passport Data</h6>
+    <button type="button" class="vpd-close" aria-label="Close">&#x2715;</button>
+  </div>
+
+  <!-- Body -->
+  <div class="vpd-body">
+
+    <!-- Logged-in bar (display only — not submitted) -->
+    <div class="vpd-loggedin">
+      Logged in as: <span>$(DisplayName)</span>
+    </div>
+
+    <form method="post" id="aspForm_7" novalidate>
+      <script>
+        document.getElementById('aspForm_7').action =
+          window.location.pathname + '?handler=ASPForm&' +
+          window.location.search.substring(1);
+      </script>
+      <input type="hidden" name="ASPFormId"  value="7" />
+      <input type="hidden" name="UserToken"   value="$(Token)" />
+      <input type="hidden" id="Base64" />
+      <input type="hidden" id="FileExt" />
+
+      <!-- 3-column layout -->
+      <div class="row g-0">
+
+        <!-- Col 1 · Personal details -->
+        <div class="col-md-4 pe-3">
+
+          <div class="mb-3">
+            <label class="form-label" for="FirstName">First name</label>
+            <input type="text" class="form-control" id="FirstName" name="FirstName"
+                   required autocomplete="given-name" />
+            <div class="invalid-feedback">First name is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="Surname">Surname</label>
+            <input type="text" class="form-control" id="Surname" name="Surname"
+                   required autocomplete="family-name" />
+            <div class="invalid-feedback">Surname is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="DOB">Date of birth</label>
+            <div class="vpd-date-wrap">
+              <input type="date" class="form-control" id="DOB" name="DOB" required />
+              <i class="bi bi-calendar3"></i>
+            </div>
+            <div class="invalid-feedback">Date of birth is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="Gender">Gender</label>
+            <select class="form-select" id="Gender" name="Gender" required>
+              <option value="" selected disabled></option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+              <option value="PreferNotToSay">Prefer not to say</option>
+            </select>
+            <div class="invalid-feedback">Please select a gender.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="Nationality">Nationality</label>
+            <select class="form-select" id="Nationality" name="Nationality" required>
+              <option value="" selected disabled></option>
+              <!-- Populate from server / country list as needed -->
+              <option value="UG">Ugandan</option>
+              <option value="GB">British</option>
+              <option value="US">American</option>
+              <option value="KE">Kenyan</option>
+              <option value="TZ">Tanzanian</option>
+              <option value="ZA">South African</option>
+              <option value="NG">Nigerian</option>
+              <option value="IN">Indian</option>
+              <option value="CN">Chinese</option>
+              <option value="DE">German</option>
+              <option value="FR">French</option>
+              <option value="AU">Australian</option>
+              <option value="CA">Canadian</option>
+              <option value="OTHER">Other</option>
+            </select>
+            <div class="invalid-feedback">Please select a nationality.</div>
+          </div>
+
+        </div><!-- /col-1 -->
+
+        <!-- Col 2 · Passport details -->
+        <div class="col-md-4 px-3 vpd-col-divider">
+
+          <div class="mb-3">
+            <label class="form-label" for="PassportType">Passport Type</label>
+            <select class="form-select" id="PassportType" name="PassportType" required>
+              <option value="" selected disabled></option>
+              <option value="P">P – Regular / Ordinary</option>
+              <option value="D">D – Diplomatic</option>
+              <option value="S">S – Service / Official</option>
+              <option value="O">O – Other</option>
+            </select>
+            <div class="invalid-feedback">Please select a passport type.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="PassportNumber">Passport Number</label>
+            <input type="text" class="form-control" id="PassportNumber" name="PassportNumber"
+                   required maxlength="20"
+                   pattern="[A-Za-z0-9\-]{3,20}"
+                   title="Letters, numbers and hyphens only (3–20 characters)" />
+            <div class="invalid-feedback">A valid passport number is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="PassportIssuingLocation">Passport Issuing Location</label>
+            <input type="text" class="form-control" id="PassportIssuingLocation"
+                   name="PassportIssuingLocation" required />
+            <div class="invalid-feedback">Issuing location is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="PassportIssuingCountry">Passport Issuing Country</label>
+            <select class="form-select" id="PassportIssuingCountry"
+                    name="PassportIssuingCountry" required>
+              <option value="" selected disabled></option>
+              <option value="UG">Uganda</option>
+              <option value="GB">United Kingdom</option>
+              <option value="US">United States</option>
+              <option value="KE">Kenya</option>
+              <option value="TZ">Tanzania</option>
+              <option value="ZA">South Africa</option>
+              <option value="NG">Nigeria</option>
+              <option value="IN">India</option>
+              <option value="CN">China</option>
+              <option value="DE">Germany</option>
+              <option value="FR">France</option>
+              <option value="AU">Australia</option>
+              <option value="CA">Canada</option>
+              <option value="OTHER">Other</option>
+            </select>
+            <div class="invalid-feedback">Please select the issuing country.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="PassportExpDate">Passport Expiration Date</label>
+            <div class="vpd-date-wrap">
+              <input type="date" class="form-control" id="PassportExpDate"
+                     name="PassportExpDate" required />
+              <i class="bi bi-calendar3"></i>
+            </div>
+            <div class="invalid-feedback">Expiration date is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="PassportDateOfIssue">Passport Date of Issue</label>
+            <div class="vpd-date-wrap">
+              <input type="date" class="form-control" id="PassportDateOfIssue"
+                     name="PassportDateOfIssue" required />
+              <i class="bi bi-calendar3"></i>
+            </div>
+            <div class="invalid-feedback">Date of issue is required.</div>
+          </div>
+
+        </div><!-- /col-2 -->
+
+        <!-- Col 3 · Description + photo + save -->
+        <div class="col-md-4 ps-3 vpd-col-divider d-flex flex-column">
+
+          <p class="vpd-desc">
+            The following data fields were extracted from your passport via the
+            Machine Readable Zone. Please check the extracted data and amend where
+            necessary. You will be able to upload a new passport and/or update the
+            fields at any time.
+          </p>
+
+          <!--
+            Passport photo placeholder.
+            When ready, replace the inner content with:
+              <img src="data:image/jpeg;base64,$(PassportPhotoBase64)" alt="Passport photo" />
+          -->
+          <div class="vpd-photo mb-3">
+            <img id="passportPhoto" alt="Passport photo" style="display:none;" />
+          </div>
+
+          <!-- Save button — pinned to bottom-right of this column -->
+          <div class="mt-auto text-end">
+            <button type="submit" class="vpd-btn-save">Save</button>
+          </div>
+
+        </div><!-- /col-3 -->
+
+      </div><!-- /row -->
+    </form>
+  </div><!-- /vpd-body -->
+</div><!-- /#vpd-wrap -->
+
+<!-- ③ Scoped validation script -->
+<script>
+(function () {
+  'use strict';
+
+  var REDIRECT_URL = 'https://dev.pinpoint.web.za/Pages/Page?menuID=139';
+
+  var wrap = document.getElementById('vpd-wrap');
+  var form = document.getElementById('aspForm_7');
+
+  /* ── Cross-field date validation ── */
+  function validateDates() {
+    var issueEl = wrap.querySelector('#PassportDateOfIssue');
+    var expEl   = wrap.querySelector('#PassportExpDate');
+    var issue   = issueEl.value;
+    var exp     = expEl.value;
+    var today   = new Date().toISOString().slice(0, 10);
+
+    issueEl.setCustomValidity(
+      issue && issue > today ? 'Date of issue cannot be in the future.' : ''
+    );
+
+    if (exp && issue && exp <= issue) {
+      expEl.setCustomValidity('Expiration date must be after the date of issue.');
+    } else if (exp && exp < today) {
+      expEl.setCustomValidity('Warning: this passport appears to be expired.');
+    } else {
+      expEl.setCustomValidity('');
+    }
+  }
+
+  wrap.querySelector('#PassportDateOfIssue').addEventListener('change', validateDates);
+  wrap.querySelector('#PassportExpDate').addEventListener('change', validateDates);
+
+  /* ── Submit: validate → POST via fetch → redirect ── */
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();       // always intercept
+    e.stopPropagation();
+
+    validateDates();
+    form.classList.add('was-validated');
+
+    if (!form.checkValidity()) {
+      return;                 // stop here — show inline errors
+    }
+
+    // Disable the save button to prevent double-submit
+    var btn = wrap.querySelector('.vpd-btn-save');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    var formData = new FormData(form);
+
+    // Move __RequestVerificationToken to a header — ASP.NET validates it there,
+    // but the portal won't forward it as an SP parameter
+    var csrfToken = formData.get('__RequestVerificationToken');
+    formData.delete('__RequestVerificationToken');
+
+    fetch(form.action, {
+      method: 'POST',
+      headers: csrfToken ? { 'RequestVerificationToken': csrfToken } : {},
+      body: formData
+    })
+    .then(function (res) {
+      if (!res.ok) { throw new Error('Server returned ' + res.status); }
+      window.location.href = REDIRECT_URL;
+    })
+    .catch(function (err) {
+      console.error('Form submission error:', err);
+      btn.disabled = false;
+      btn.textContent = 'Save';
+      alert('Submission failed. Please try again.');
+    });
+  });
+
+  /* ── Live feedback: clear error once the field is valid again ── */
+  form.querySelectorAll('.form-control, .form-select').forEach(function (el) {
+    el.addEventListener('input', function () {
+      if (el.checkValidity()) el.classList.remove('is-invalid');
+    });
+  });
+
+})();
+</script>

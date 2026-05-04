@@ -1,0 +1,59 @@
+<!-- Paste into your portal page Custom HTML block -->
+<form method="post" id="aspForm_7">
+<script>
+  document.getElementById('aspForm_7').action =
+    window.location.pathname + '?handler=ASPForm&' + window.location.search.substring(1);
+</script>
+    <input type="hidden" name="ASPFormId" value="7" />
+
+    <div class="form-group mb-3">
+        <label for="UserToken">Usertoken</label>
+        <input type="text" class="form-control" id="UserToken" name="UserToken" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="FirstName">Firstname</label>
+        <input type="text" class="form-control" id="FirstName" name="FirstName" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="Surname">Surname</label>
+        <input type="text" class="form-control" id="Surname" name="Surname" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="DOB">DOB</label>
+        <input type="text" class="form-control" id="DOB" name="DOB" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="Gender">Gender</label>
+        <input type="text" class="form-control" id="Gender" name="Gender" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="Nationality">Nationality</label>
+        <input type="text" class="form-control" id="Nationality" name="Nationality" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="PassportType">Passporttype</label>
+        <input type="text" class="form-control" id="PassportType" name="PassportType" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="PassportNumber">Passportnumber</label>
+        <input type="text" class="form-control" id="PassportNumber" name="PassportNumber" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="PassportIssuingLocation">Passportissuinglocation</label>
+        <input type="text" class="form-control" id="PassportIssuingLocation" name="PassportIssuingLocation" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="PassportIssuingCountry">Passportissuingcountry</label>
+        <input type="text" class="form-control" id="PassportIssuingCountry" name="PassportIssuingCountry" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="PassportExpDate">Passportexpdate</label>
+        <input type="text" class="form-control" id="PassportExpDate" name="PassportExpDate" />
+    </div>
+    <div class="form-group mb-3">
+        <label for="PassportDateOfIssue">Passportdateofissue</label>
+        <input type="text" class="form-control" id="PassportDateOfIssue" name="PassportDateOfIssue" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>

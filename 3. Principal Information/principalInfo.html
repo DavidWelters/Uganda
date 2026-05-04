@@ -1,0 +1,361 @@
+<!--
+  ╔══════════════════════════════════════════════════════════╗
+  ║  PRINCIPAL INFORMATION — self-contained snippet          ║
+  ║  Styled to match Verify Passport Data.                   ║
+  ║  All CSS scoped to #pi-wrap — nothing leaks out.         ║
+  ╚══════════════════════════════════════════════════════════╝
+-->
+
+<!-- ① Scoped styles — mirrored from verify-passport-modal -->
+<style>
+  /* ── Shell ── */
+  #pi-wrap {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-width: 900px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 4px 24px rgba(0,0,0,.12);
+  }
+
+  /* ── Header ── */
+  #pi-wrap .pi-header {
+    border-bottom: 1px solid #ddd;
+    padding: 14px 20px;
+    text-align: center;
+    position: relative;
+  }
+  #pi-wrap .pi-title {
+    font-size: .9rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  #pi-wrap .pi-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: #333;
+    cursor: pointer;
+    padding: 0;
+  }
+  #pi-wrap .pi-close:hover { color: #000; }
+
+  /* ── Body ── */
+  #pi-wrap .pi-body {
+    padding: 24px 28px 20px;
+  }
+
+  /* ── Logged-in bar ── */
+  #pi-wrap .pi-loggedin {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 5px 10px;
+    font-size: .78rem;
+    color: #666;
+    margin-bottom: 20px;
+  }
+  #pi-wrap .pi-loggedin strong {
+    font-weight: 600;
+    color: #333;
+  }
+
+  /* ── Section heading ── */
+  #pi-wrap .pi-section-heading {
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin: 0 0 16px;
+    color: #111;
+  }
+
+  /* ── Labels ── */
+  #pi-wrap .form-label {
+    font-size: .78rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #333;
+  }
+
+  /* ── Inputs & selects ── */
+  #pi-wrap .form-control,
+  #pi-wrap .form-select {
+    font-size: .82rem;
+    border-radius: 3px;
+    border-color: #bbb;
+    padding: 5px 10px;
+    height: 34px;
+  }
+  #pi-wrap .form-control:focus,
+  #pi-wrap .form-select:focus {
+    border-color: #666;
+    box-shadow: 0 0 0 .15rem rgba(0,0,0,.1);
+  }
+
+  /* ── Validation feedback ── */
+  #pi-wrap .invalid-feedback {
+    font-size: .72rem;
+  }
+  #pi-wrap .form-control.is-invalid,
+  #pi-wrap .form-select.is-invalid {
+    border-color: #dc3545;
+    background-image: none;
+    padding-right: 10px;
+  }
+
+  /* ── Save button ── */
+  #pi-wrap .pi-btn-save {
+    background: #d0d0d0;
+    border: 1px solid #aaa;
+    color: #333;
+    font-size: .8rem;
+    padding: 5px 26px;
+    border-radius: 3px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  #pi-wrap .pi-btn-save:hover {
+    background: #b8b8b8;
+    border-color: #888;
+    color: #111;
+  }
+  #pi-wrap .pi-btn-save:disabled {
+    opacity: .65;
+    cursor: not-allowed;
+  }
+</style>
+
+<!-- ② Markup -->
+<div id="pi-wrap">
+
+  <!-- Header -->
+  <div class="pi-header">
+    <h6 class="pi-title">Principal Information</h6>
+    <button type="button" class="pi-close" aria-label="Close">&#x2715;</button>
+  </div>
+
+  <!-- Body -->
+  <div class="pi-body">
+
+    <!-- Logged-in bar (display only — not submitted) -->
+    <div class="pi-loggedin">
+      Logged in as: <strong>$(DisplayName)</strong>
+    </div>
+
+    <form method="post" id="aspForm_10" novalidate>
+      <script>
+        document.getElementById('aspForm_10').action =
+          window.location.pathname + '?handler=ASPForm&' +
+          window.location.search.substring(1);
+      </script>
+      <input type="hidden" name="ASPFormId" value="10" />
+      <input type="hidden" name="UserToken" value="$(Token)" />
+
+      <!-- Section heading -->
+      <p class="pi-section-heading">Personal Information</p>
+
+      <!-- Row 1: Country of Birth | Place of Birth | Marital Status -->
+      <div class="row g-3 mb-3">
+
+        <div class="col-md-3">
+          <label class="form-label" for="CountryOfBirth">Country of birth</label>
+          <select class="form-select" id="CountryOfBirth" name="CountryOfBirth" required>
+            <option value="" selected disabled></option>
+            <option value="UG">Uganda</option>
+            <option value="GB">United Kingdom</option>
+            <option value="US">United States</option>
+            <option value="ZA">South Africa</option>
+            <option value="KE">Kenya</option>
+            <option value="TZ">Tanzania</option>
+            <option value="NG">Nigeria</option>
+            <option value="IN">India</option>
+            <option value="CN">China</option>
+            <option value="DE">Germany</option>
+            <option value="FR">France</option>
+            <option value="AU">Australia</option>
+            <option value="CA">Canada</option>
+            <option value="OTHER">Other</option>
+          </select>
+          <div class="invalid-feedback">Please select a country of birth.</div>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="PlaceOfBirth">Place of birth</label>
+          <input type="text" class="form-control" id="PlaceOfBirth" name="PlaceOfBirth" required />
+          <div class="invalid-feedback">Place of birth is required.</div>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="MaritalStatus">Marital status</label>
+          <select class="form-select" id="MaritalStatus" name="MaritalStatus" required>
+            <option value="" selected disabled></option>
+            <option value="Single">Single</option>
+            <option value="Married">Married</option>
+            <option value="Divorced">Divorced</option>
+            <option value="Widowed">Widowed</option>
+            <option value="Separated">Separated</option>
+            <option value="Other">Other</option>
+          </select>
+          <div class="invalid-feedback">Please select a marital status.</div>
+        </div>
+
+      </div><!-- /row 1 -->
+
+      <!-- Row 2: Current Residential Address | City of Residence | Country of Residence -->
+      <div class="row g-3 mb-3">
+
+        <div class="col-md-6">
+          <label class="form-label" for="CurrentResidentialAdd">Current Residential address</label>
+          <input type="text" class="form-control" id="CurrentResidentialAdd"
+                 name="CurrentResidentialAdd" required />
+          <div class="invalid-feedback">Residential address is required.</div>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="CityOfResidence">City of Residence</label>
+          <input type="text" class="form-control" id="CityOfResidence"
+                 name="CityOfResidence" required />
+          <div class="invalid-feedback">City of residence is required.</div>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" for="CountryOfResidence">Country of Residence</label>
+          <select class="form-select" id="CountryOfResidence" name="CountryOfResidence" required>
+            <option value="" selected disabled></option>
+            <option value="UG">Uganda</option>
+            <option value="GB">United Kingdom</option>
+            <option value="US">United States</option>
+            <option value="ZA">South Africa</option>
+            <option value="KE">Kenya</option>
+            <option value="TZ">Tanzania</option>
+            <option value="NG">Nigeria</option>
+            <option value="IN">India</option>
+            <option value="CN">China</option>
+            <option value="DE">Germany</option>
+            <option value="FR">France</option>
+            <option value="AU">Australia</option>
+            <option value="CA">Canada</option>
+            <option value="OTHER">Other</option>
+          </select>
+          <div class="invalid-feedback">Please select a country of residence.</div>
+        </div>
+
+      </div><!-- /row 2 -->
+
+      <!-- Row 3: Country Phone Code | Phone Number -->
+      <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+          <label class="form-label" for="CountryPhoneCode">Country of phone number</label>
+          <select class="form-select" id="CountryPhoneCode" name="CountryPhoneCode" required>
+            <option value="" selected disabled></option>
+            <option value="+256">+256 Uganda</option>
+            <option value="+27">+27 South Africa</option>
+            <option value="+254">+254 Kenya</option>
+            <option value="+255">+255 Tanzania</option>
+            <option value="+234">+234 Nigeria</option>
+            <option value="+44">+44 United Kingdom</option>
+            <option value="+1">+1 United States / Canada</option>
+            <option value="+91">+91 India</option>
+            <option value="+86">+86 China</option>
+            <option value="+49">+49 Germany</option>
+            <option value="+33">+33 France</option>
+            <option value="+61">+61 Australia</option>
+            <option value="OTHER">Other</option>
+          </select>
+          <div class="invalid-feedback">Please select a country phone code.</div>
+        </div>
+
+        <div class="col-md-3">
+          <!--
+            Phone validation (rule 10.3.16):
+              • Compulsory
+              • Strip all spaces
+              • Only allow: 0–9  (  )  -
+          -->
+          <label class="form-label" for="PhoneNumber">Phone number</label>
+          <input type="tel"
+                 class="form-control"
+                 id="PhoneNumber"
+                 name="PhoneNumber"
+                 required
+                 pattern="[0-9()-]+"
+                 title="Only digits, (, ), and - are allowed. No spaces." />
+          <div class="invalid-feedback">Enter a valid phone number (digits, (, ), - only).</div>
+        </div>
+
+      </div><!-- /row 3 -->
+
+      <!-- Save button -->
+      <div class="text-end">
+        <button type="submit" class="pi-btn-save">Save</button>
+      </div>
+
+    </form>
+  </div><!-- /pi-body -->
+</div><!-- /#pi-wrap -->
+
+<!-- ③ Scoped validation script -->
+<script>
+(function () {
+  'use strict';
+
+  var wrap = document.getElementById('pi-wrap');
+  var form = document.getElementById('aspForm_10');
+
+  /* ── Phone: strip disallowed characters on every keystroke and blur ── */
+  var phoneEl = wrap.querySelector('#PhoneNumber');
+
+  function sanitisePhone() {
+    phoneEl.value = phoneEl.value.replace(/[^0-9()-]/g, '');
+  }
+  phoneEl.addEventListener('input', sanitisePhone);
+  phoneEl.addEventListener('blur',  sanitisePhone);
+
+  /* ── Submit: validate → POST via fetch → (optional) redirect ── */
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    sanitisePhone();
+    form.classList.add('was-validated');
+
+    if (!form.checkValidity()) { return; }
+
+    var btn = wrap.querySelector('.pi-btn-save');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form)
+    })
+    .then(function (res) {
+      if (!res.ok) { throw new Error('Server returned ' + res.status); }
+      window.location.href = 'https://dev.pinpoint.web.za/Pages/Page?menuID=140';
+    })
+    .catch(function (err) {
+      console.error('Form submission error:', err);
+      btn.disabled = false;
+      btn.textContent = 'Save';
+      alert('Submission failed. Please try again.');
+    });
+  });
+
+  /* ── Live feedback: clear error once field is valid ── */
+  form.querySelectorAll('.form-control, .form-select').forEach(function (el) {
+    el.addEventListener('input', function () {
+      if (el.checkValidity()) el.classList.remove('is-invalid');
+    });
+  });
+
+})();
+</script>

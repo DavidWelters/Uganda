@@ -1,0 +1,192 @@
+<!-- Uganda Unified Border Management - Homepage Widget -->
+<!-- Drop this block anywhere in your portal page -->
+
+<style>
+  #ubm-home *, #ubm-home *::before, #ubm-home *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  #ubm-home {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    width: 100%;
+  }
+
+  #ubm-home .home-card {
+    background: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    width: 100%;
+    max-width: 640px;
+    overflow: hidden;
+  }
+
+  #ubm-home .home-header {
+    background-color: #1a4a3a;
+    padding: 28px 32px 24px;
+  }
+
+  #ubm-home .flag-bar {
+    display: flex;
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    width: 120px;
+  }
+
+  #ubm-home .flag-bar span:nth-child(1) { flex: 1; background: #000000; }
+  #ubm-home .flag-bar span:nth-child(2) { flex: 1; background: #FCDC04; }
+  #ubm-home .flag-bar span:nth-child(3) { flex: 1; background: #D90000; }
+  #ubm-home .flag-bar span:nth-child(4) { flex: 1; background: #000000; }
+  #ubm-home .flag-bar span:nth-child(5) { flex: 1; background: #FCDC04; }
+  #ubm-home .flag-bar span:nth-child(6) { flex: 1; background: #D90000; }
+
+  #ubm-home .header-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #a8c8bc;
+    margin-bottom: 4px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  #ubm-home .header-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  #ubm-home .home-body {
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  #ubm-home .section-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #6b7a74;
+    margin-bottom: 12px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  #ubm-home .nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #ubm-home .nav-btn {
+    display: block;
+    width: 100%;
+    padding: 11px 16px;
+    text-align: left;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a4a3a;
+    background: #ffffff;
+    border: 1.5px solid #c2d4cf;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    text-decoration: none;
+  }
+
+  #ubm-home .nav-btn:hover {
+    background: #eef4f2;
+    border-color: #1a4a3a;
+    color: #1a4a3a;
+  }
+
+  #ubm-home .nav-btn:active {
+    background: #d8eae5;
+  }
+
+  #ubm-home .nav-btn.disabled,
+  #ubm-home .nav-btn[disabled] {
+    color: #b0bdb9;
+    background: #f5f5f5;
+    border-color: #e0e5e3;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  #ubm-home .nav-divider {
+    height: 1px;
+    background: #e8edeb;
+    margin: 4px 0;
+  }
+
+  #ubm-home .new-app-btn {
+    display: block;
+    width: 100%;
+    padding: 11px 16px;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    background: #1a4a3a;
+    border: 1.5px solid #1a4a3a;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    text-decoration: none;
+  }
+
+  #ubm-home .new-app-btn:hover {
+    background: #143d30;
+    border-color: #143d30;
+  }
+
+  #ubm-home .new-app-btn:active {
+    background: #0f2f24;
+  }
+</style>
+
+<div id="ubm-home">
+  <div class="home-card">
+
+    <div class="home-header">
+      <div class="flag-bar">
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+      </div>
+      <p class="header-eyebrow">Republic of Uganda</p>
+      <h1 class="header-title">Unified Border Management</h1>
+    </div>
+
+    <div class="home-body">
+
+      <div>
+        <p class="section-label">Navigation</p>
+        <div class="nav-list">
+          <a href="https://dev.pinpoint.web.za/Pages/Page?PageID=24" class="nav-btn">Principal info</a>
+          <a href="#" class="nav-btn">Documents</a>
+          <div class="nav-divider"></div>
+          <button class="nav-btn disabled" disabled>Family</button>
+          <button class="nav-btn disabled" disabled>Groups</button>
+          <div class="nav-divider"></div>
+          <a href="#" class="nav-btn">Profile</a>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Applications</p>
+        <a href="https://lf.automatenow.co.za/Forms/PrincipalClientInfo?token=$(Token)" class="new-app-btn" target="_blank" rel="noopener noreferrer">+ New Application</a>
+      </div>
+
+    </div>
+  </div>
+</div>
