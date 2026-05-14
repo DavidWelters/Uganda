@@ -1,42 +1,36 @@
 <!-- Paste into your portal page Custom HTML block -->
-<form method="post" id="aspForm_5">
-<style>
-  .form-group.mb-3 {
-    display: none;
-  }
-</style>
+<form method="post" id="aspForm_13">
 <script>
-  document.getElementById('aspForm_5').action =
+  document.getElementById('aspForm_13').action =
     window.location.pathname + '?handler=ASPForm&' + window.location.search.substring(1);
 </script>
-    <input type="hidden" name="ASPFormId" value="5" />
-
-    <div class="form-group mb-3">
-        <label for="UserToken">Usertoken</label>
-        <input type="text" class="form-control" value=$(Token) id="UserToken" name="UserToken" />
-    </div>
-    <div class="form-group mb-3">
-        <label for="Base64">Base64</label>
-        <input type="text" class="form-control" id="Base64" name="Base64" />
-    </div>
-    <div class="form-group mb-3" type="hidden">
-        <label for="FileExt">Fileext</label>
-        <input type="text" class="form-control" id="FileExt" name="FileExt" />
-    </div>
-
-    <button type="submit" class="btn btn-primary">Submit</button>
+    <input type="hidden" name="ASPFormId" value="13" />
+    <input type="hidden" id="UserToken" name="UserToken" value="$(Token)" />
+    <input type="hidden" id="Base64" name="Base64" />
+    <input type="hidden" id="FileExt" name="FileExt" />
+    <button type="submit" id="submitBtn" class="btn btn-primary" style="display:none;">Submit</button>
 </form>
+
 <script>
-  document.getElementById('aspForm_5').addEventListener('submit', function (e) {
+document.getElementById('aspForm_13').addEventListener('submit', function (e) {
     e.preventDefault();
-    var form = this;
+
+    const form = this;
+    const formData = new FormData(form);
+
     fetch(form.action, {
-      method: 'POST',
-      body: new FormData(form)
-    }).then(function () {
-      window.location.href = 'https://dev.pinpoint.web.za/Pages/Page?menuID=138';
-    }).catch(function () {
-      window.location.href = 'https://dev.pinpoint.web.za/Pages/Page?PageID=20';
+        method: 'POST',
+        body: formData
+    })
+    .then(function (response) {
+        if (response.ok) {
+            window.location.href = 'https://dev.pinpoint.web.za/Pages/Page?menuID=138';
+        } else {
+            console.error('Submission failed with status:', response.status);
+        }
+    })
+    .catch(function (err) {
+        console.error('Submission error:', err);
     });
-  });
+});
 </script>
