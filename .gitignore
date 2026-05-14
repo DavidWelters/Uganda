@@ -1,0 +1,18 @@
+# Windows
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# OneDrive sync artifacts
+*.tmp
+~$*
+.~lock.*
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
