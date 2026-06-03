@@ -1,0 +1,64 @@
+<style>
+    .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        color: #E07B2A;
+        border: 1.5px solid #E07B2A;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-family: Arial, sans-serif;
+        cursor: pointer;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    .btn-ghost:hover { background-color: #E07B2A; color: white; }
+    .btn-ghost:active { background-color: #a0541a; border-color: #a0541a; color: white; }
+    .btn-ghost:disabled { border-color: #cccccc; color: #cccccc; cursor: not-allowed; }
+
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .btn-ghost.spinning svg { animation: spin 0.7s linear infinite; }
+
+    .button-container { text-align: right; width: 100%; margin-top: 16px; }
+</style>
+
+<script>
+function restartLookups(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var btn = document.getElementById('restartBtn');
+    btn.disabled = true;
+    btn.classList.add('spinning');
+
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get('token');
+    if (token) {
+        $(F.sessionToken + ' input').val(token).change();
+    }
+
+    try { editFamilyMember(); }   catch(ex) { console.warn('editFamilyMember():', ex); }
+    try { removeFamilyMember(); } catch(ex) { console.warn('removeFamilyMember():', ex); }
+    try { hideNativeControls(); } catch(ex) { console.warn('hideNativeControls():', ex); }
+    try { observeFamilyTable(); } catch(ex) { console.warn('observeFamilyTable():', ex); }
+
+    setTimeout(function () {
+        btn.disabled = false;
+        btn.classList.remove('spinning');
+    }, 1500);
+
+    return false;
+}
+</script>
+
+<div class="button-container">
+    <button class="btn-ghost" id="restartBtn" type="button" onclick="restartLookups(event)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4"/>
+            <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>
+        </svg>
+        Refresh
+    </button>
+</div>

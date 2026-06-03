@@ -1,0 +1,72 @@
+<style>
+  #submit-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  #submit-success .ss-icon {
+    width: 56px;
+    height: 56px;
+    background: #1a4a3a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  #submit-success .ss-icon svg { color: #fff; }
+  #submit-success h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1a4a3a;
+    margin: 0 0 8px;
+  }
+  #submit-success p {
+    font-size: .88rem;
+    color: #555;
+    margin: 0 0 28px;
+  }
+  #submit-success .ss-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  #submit-success .ss-btn-close {
+    background: #1a4a3a;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 9px 24px;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  #submit-success .ss-btn-close:hover { background: #143d30; }
+  #submit-success .ss-link {
+    font-size: .85rem;
+    color: #1a4a3a;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+</style>
+
+<div id="submit-success">
+  <div class="ss-icon">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  </div>
+  <h2>Successfully Saved</h2>
+  <p>Your information has been saved. You may close this tab or return to the portal.</p>
+  <div class="ss-actions">
+    <button class="ss-btn-close" onclick="window.close()">Close Tab</button>
+    <a class="ss-link" id="ss-portal-link" href="https://dev.pinpoint.web.za/Pages/Page?menuID=140&redirect=140">Return to Portal</a>
+  </div>
+</div>

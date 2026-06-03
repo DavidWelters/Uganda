@@ -1,0 +1,82 @@
+
+<script>
+function waitForLookupComplete(callback) {
+    var counter = 0;
+    var maxWait = 15000;
+    var fallbackTimer = null;
+
+    function done() {
+        clearTimeout(fallbackTimer);
+        $(document).off('lookupstarted.wflc lookupcomplete.wflc');
+        callback();
+    }
+
+    $(document).on('lookupstarted.wflc', function () {
+        counter++;
+    });
+
+    $(document).on('lookupcomplete.wflc', function () {
+        if (counter > 0) counter--;
+        if (counter === 0) done();
+    });
+
+    fallbackTimer = setTimeout(function () {
+        console.warn('Lookup wait timed out, proceeding anyway');
+        done();
+    }, maxWait);
+}
+
+function saveAndClose(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var saveBtn = document.getElementById('saveAndCloseBtn');
+    var refreshBtn = document.getElementById('saveAndRefreshBtn');
+    saveBtn.disabled = true;
+    refreshBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+
+    $('#lookup1609').trigger('click');
+
+    waitForLookupComplete(function () {
+        var token = new URL(window.location.href).searchParams.get('token') || '';
+        window.location.href = 'https://lf.automatenow.co.za/Forms/FamilyMembers'
+            + '?token=' + encodeURIComponent(token);
+    });
+    return false;
+}
+
+function goBack() {
+    var token = new URL(window.location.href).searchParams.get('token') || '';
+    window.location.href = 'https://lf.automatenow.co.za/Forms/FamilyMembers'
+        + '?token=' + encodeURIComponent(token);
+}
+
+function saveAndRefresh(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var saveBtn = document.getElementById('saveAndCloseBtn');
+    var refreshBtn = document.getElementById('saveAndRefreshBtn');
+    saveBtn.disabled = true;
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = 'Saving...';
+
+    $('#lookup1609').trigger('click');
+
+    waitForLookupComplete(function () {
+        window.location.reload();
+    });
+    return false;
+}
+</script>
+
+<div style="display: inline-flex; gap: 8px; align-items: center;">
+    <button type="button" class="addfamilybutton btn btn-success" id="saveAndCloseBtn" onclick="saveAndClose(event)">
+        Save
+    </button>
+    <button type="button" class="addfamilybutton btn btn-success" id="saveAndRefreshBtn" onclick="saveAndRefresh(event)">
+        Add Another
+    </button>
+    <button type="button" class="addfamilybutton btn btn-success" onclick="goBack()">
+        Back
+    </button>
+</div>

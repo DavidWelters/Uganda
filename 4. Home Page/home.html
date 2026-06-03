@@ -27,24 +27,21 @@
 
   #ubm-home .home-header {
     background-color: #1a4a3a;
-    padding: 28px 32px 24px;
+    padding: 28px 32px 0;
   }
 
   #ubm-home .flag-bar {
     display: flex;
-    height: 4px;
-    border-radius: 2px;
+    height: 6px;
     overflow: hidden;
-    margin-bottom: 14px;
-    width: 120px;
+    margin: 16px -32px 0 -32px;
+    width: auto;
+    border-radius: 0;
   }
 
   #ubm-home .flag-bar span:nth-child(1) { flex: 1; background: #000000; }
   #ubm-home .flag-bar span:nth-child(2) { flex: 1; background: #FCDC04; }
   #ubm-home .flag-bar span:nth-child(3) { flex: 1; background: #D90000; }
-  #ubm-home .flag-bar span:nth-child(4) { flex: 1; background: #000000; }
-  #ubm-home .flag-bar span:nth-child(5) { flex: 1; background: #FCDC04; }
-  #ubm-home .flag-bar span:nth-child(6) { flex: 1; background: #D90000; }
 
   #ubm-home .header-eyebrow {
     font-size: 11px;
@@ -159,12 +156,12 @@
   <div class="home-card">
 
     <div class="home-header">
+      <p class="header-eyebrow">Republic of Uganda</p>
+      <h1 class="header-title">Unified Border Management</h1>
       <div class="flag-bar">
         <span></span><span></span><span></span>
         <span></span><span></span><span></span>
       </div>
-      <p class="header-eyebrow">Republic of Uganda</p>
-      <h1 class="header-title">Unified Border Management</h1>
     </div>
 
     <div class="home-body">
@@ -172,11 +169,12 @@
       <div>
         <p class="section-label">Navigation</p>
         <div class="nav-list">
-          <a href="https://dev.pinpoint.web.za/Pages/Page?PageID=24" class="nav-btn">Principal info</a>
+          <a href="https://lf.automatenow.co.za/Forms/PrincipalClientInfo?token=$(Token)" class="nav-btn">Principal info</a>
           <a href="#" class="nav-btn">Documents</a>
           <div class="nav-divider"></div>
-          <button class="nav-btn disabled" disabled>Family</button>
-          <button class="nav-btn disabled" disabled>Groups</button>
+          <a href="#" class="nav-btn" onclick="window.open('https://lf.automatenow.co.za/Forms/FamilyMembers?token=$(Token)', '_blank'); return false;">Family</a>
+
+<a href="#" class="nav-btn" onclick="window.open('https://lf.automatenow.co.za/Forms/GroupList?token=$(Token)', '_blank'); return false;">Groups</a>
           <div class="nav-divider"></div>
           <a href="#" class="nav-btn">Profile</a>
         </div>
