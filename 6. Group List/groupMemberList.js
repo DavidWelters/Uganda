@@ -81,12 +81,16 @@ function editGroupMember() {
         $btn.on("click", function () {
             let sessionToken = $(FM.sessionToken + ' input').val() || '';
             let userId       = $row.find('.userId input').val() || '';
+            let userPassport   = $row.find('.userPassportNumber input').val() || '';
+            let selectedGroupId = $('.selectedGroupId input').val() || '';
 
             if (!userId) { alert('User ID unknown.'); return; }
 
             window.location.href = 'https://lf.automatenow.co.za/Forms/ManageGroupMember'
                 + '?token='  + encodeURIComponent(sessionToken)
-                + '&userId=' + encodeURIComponent(userId);
+                + '&userId=' + encodeURIComponent(userId)
+                + '&passportNumber=' + encodeURIComponent(userPassport)
+                + '&groupId=' + encodeURIComponent(selectedGroupId);
         });
     });
 }

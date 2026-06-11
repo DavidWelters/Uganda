@@ -1,7 +1,7 @@
 # Uganda Unified Border Management — Database Reference
 
-**Database:** `Uganda_Forms`
-**Version:** 1.1 — May 2026
+**Database:** `Uganda_Visa_Applications`
+**Version:** 2.0 — June 2026
 **Classification:** Confidential / In Commercial Confidence
 
 ---
@@ -11,33 +11,32 @@
 1. [Overview](#overview)
 2. [Architecture Summary](#architecture-summary)
 3. [Section 1 — Reference / Lookup Tables](#section-1--reference--lookup-tables)
-4. [Section 2 — User Identity Tables](#section-2--user-identity-tables)
+4. [Section 2 — User Identity & Person Data](#section-2--user-identity--person-data)
 5. [Section 3 — Family Management Tables](#section-3--family-management-tables)
 6. [Section 4 — Group Management Tables](#section-4--group-management-tables)
 7. [Section 5 — Application Master Tables](#section-5--application-master-tables)
 8. [Section 6 — Application Person Data](#section-6--application-person-data)
-9. [Section 7 — Application Family & Group Member Tables](#section-7--application-family--group-member-tables)
-10. [Section 8 — Objects Requiring Verification](#section-8--objects-requiring-verification)
+9. [Section 7 — Workflow & Permit Tables](#section-7--workflow--permit-tables)
+10. [Section 8 — Operational & System Tables](#section-8--operational--system-tables)
 11. [Section 9 — Stored Procedures](#section-9--stored-procedures)
 12. [Section 10 — Views](#section-10--views)
+13. [Changelog](#changelog)
 
 ---
 
 ## Overview
 
-This document describes the full database schema for the Uganda Unified Border Management Client Portal. It covers all tables, their purpose, their relationships, and all stored procedures and views. It is intended as the primary reference for ERD creation and onboarding of new developers.
+This document describes the full database schema for the Uganda Unified Border Management Client Portal. It covers all tables, their purpose, their relationships, and all stored procedures and views. It is the primary reference for ERD creation and developer onboarding.
 
 The database supports the following end-to-end workflow:
 
 ```
 Portal Registration
       ↓
-Upload Passport + Complete Principal Profile
+Complete Personal Profile (tblPersonalProfileDetails)
       ↓
-Manage Family Unit (pre-application)
-      ↓
-Manage Groups (pre-application)
-      ↓
+Manage Family Unit (pre-application)          Manage Groups (pre-application)
+      ↓                                               ↓
 Start New Application → Select Type / Category / Subcategory
       ↓
 Include Family / Group Members
@@ -53,34 +52,58 @@ Officer Processing Queue → Approve / Reject / Defer / Refer
 
 ## Architecture Summary
 
-The schema is divided into two layers:
+`tblPersonalProfileDetails` is the central person record for the entire system. Every person — whether a portal user, family member, or group member — has exactly one record here. Portal users are linked via `tblSecUserMap.fldSecUserId` (nullable — non-portal persons have no portal account).
 
-**Pre-Application Layer** — data the user manages on their account before starting any application. This data is editable at any time.
+There are **three paths** through which a person reaches `tblVisaApplicationSubmitted`:
 
-| Table Group | Tables |
+```
+tblSecUserMap
+      │ fldSecUserId (nullable)
+      ▼
+tblPersonalProfileDetails  ◄─── Single person record for entire system
+      │              │                    │
+      │ fldUserId    │ fldUserId           │ fldUserId
+      ▼              ▼                    ▼
+tblGroupMembers  tblFamilyMembers    (principal — direct via tblSecUserMap)
+      │ fldGroupID   │ fldFamilyID
+      ▼              ▼
+  tblGroups      tblFamilies
+      │              │
+      │ fldGroupID   │ fldFamilyGroupID
+      └──────┬────────┘
+             ▼
+  tblVisaApplicationSubmitted  ◄── also FK to tblSecUserMap (fldUserId)
+             │
+             ▼
+  tblApplicantPersonData (snapshot of personal data + travel fields)
+  tblPrincipleDocuments  (principal applicant's documents per application)
+```
+
+**Key design principles:**
+- `tblFamilyMembers` and `tblGroupMembers` are **lean junction tables** — personal data lives entirely in `tblPersonalProfileDetails`, not in the junction tables themselves.
+- There are **no application-layer snapshot copies** of family or group member data. The pre-application tables are used directly.
+- `tblApplicantPersonData` is the only snapshot table — it freezes the principal's personal and travel data at application time.
+- Family and group chains are **fully independent** — group members have no FK relationship to `tblFamilyMembers`.
+
+### Table Inventory by Category
+
+| Category | Tables |
 |---|---|
-| User Identity | tblSecUserMap, tblVisaApplicationPassport, tblVisaApplicationPassportDetails, tblVisaApplicationNewPrincipalInfo |
+| Lookup / Reference | tblSettings, tblApplicationTypes, tblApplicationCategories, tblApplicationSubcategories, tblSubcategoryMandatoryDocuments, tblPermitDocumentRequirement, tblDocumentTypes, tblNationalities, tblPassportTypes, tblGenders, tblMaritalStatuses, tblGuardianRelationships, tblGroupMemberTypes, tblGroupTypes, tblPurposesOfVisit, tblPointsOfEntry, tblImmigrationStatuses, tblReasons, tblDepartments |
+| Person & Identity | tblSecUserMap, tblPersonalProfileDetails, tblGuardian |
 | Family Management | tblFamilies, tblFamilyMembers, tblFamilyMemberDocuments |
-| Group Management | tblGroups, tblGroupMembers, tblGroupDocuments |
-
-> **Design note — Family vs Group distinction:** Family members (`tblFamilyMembers`) are persons with a personal relationship to the principal — spouses, children, dependants. Group members (`tblGroupMembers`) are independent persons in a named group such as a tour group, corporate delegation, sports team, or school trip. Group members have **no required family relationship** with the principal and carry their own complete personal and passport data directly on `tblGroupMembers`. They do not require a `tblFamilyMembers` record.
-
-| Reference / Config | tblSettings, tblApplicationTypes, tblApplicationCategories, tblApplicationSubcategories, tblDocumentTypes, tblNationalities, tblPassportTypes, tblGenders, tblMaritalStatuses, tblGuardianRelationships, tblGroupMemberTypes, tblPurposesOfVisit, tblPointsOfEntry, tblImmigrationStatuses, tblReasons, tblDepartments |
-
-**Application Layer** — data locked in at the time an application is created or submitted. Changes to pre-application data do not affect submitted applications.
-
-| Table Group | Tables |
-|---|---|
+| Group Management | tblGroups, tblGroupMembers, tblGroupDocuments, tblGroupMemberDocuments |
 | Application Master | tblVisaApplicationSubmitted, tblVisaApplicationApprovalHistory, tblSupervisorNotifications |
-| Applicant Data | tblApplicantPersonData, tblApplicantDocuments |
-| Family Members on Application | tblApplicationFamilyMembers, tblApplicationFamilyMemberDocuments |
-| Group Members on Application | tblApplicationGroups, tblApplicationGroupMembers, tblApplicationGroupMemberDocuments |
+| Application Person Data | tblApplicantPersonData, tblPrincipleDocuments |
+| Workflow & Permits | tblApplicationWorkflowType, tblApplicationWorkflowRequest |
+| Operational | tblAuditLog, tblErrorLog, tblApplicationID |
+| Future Modules | tblBanks, tblCompanyTypes, tblPersonTypes, tblCitizenshipTypes, tblBiometricCaptureFailReasons, tblEyeColors, tblHairColors, tblSkinColors, tblIndigenousCommunities, tblModesOfTravel, tblMonthlyIncomeRanges, tblNonProfitCompanyTypes, tblOperators, tblProfessions, tblRemovalTypes, tblSchoolTypes, tblSourceAuthorities, tblRareSkills, tblSpecificMinerals, tblOtherMinerals, tblAgroProductTypes, tblCurrencies, tblPaymentModes, tblVisaExemptReasons, tblVisaIssuingAuthorities, tblStatusTypes, tblTempTravelDocTypes |
 
 ---
 
 ## Section 1 — Reference / Lookup Tables
 
-These tables contain static configuration data. They populate dropdowns, drive validation rules, and define the allowed values for fields across the system. They contain no user-generated transaction data.
+These tables contain static configuration data. They populate dropdowns, drive validation rules, and define the allowed values for fields across the system.
 
 ---
 
@@ -97,7 +120,7 @@ These tables contain static configuration data. They populate dropdowns, drive v
 | fldUpdatedAt | Last modified timestamp |
 | fldUpdatedBy | Who last changed the value |
 
-**Relationships:** Standalone — no FK relationships. Read by application logic and stored procedures.
+**Relationships:** Standalone — no FK relationships.
 
 **Seeded values:**
 
@@ -122,6 +145,7 @@ These tables contain static configuration data. They populate dropdowns, drive v
 | fldCode | Short code (e.g. `VISA`, `EP`, `SP`) |
 | fldIsActive | Controls visibility in dropdowns |
 | fldSortOrder | Display order |
+| fldCreatedAt | Creation timestamp |
 
 **Relationships:** One type → many categories (`tblApplicationCategories`)
 
@@ -141,6 +165,7 @@ These tables contain static configuration data. They populate dropdowns, drive v
 | fldCode | Short code |
 | fldIsActive | Controls visibility |
 | fldSortOrder | Display order |
+| fldCreatedAt | Creation timestamp |
 
 **Relationships:**
 - FK to `tblApplicationTypes` via `fldApplicationTypeID`
@@ -152,7 +177,7 @@ These tables contain static configuration data. They populate dropdowns, drive v
 
 ### tblApplicationSubcategories
 
-**Purpose:** Subcategories within each category. Holds price per person and links to mandatory documents. The price stored here is automatically applied to the application when selected.
+**Purpose:** Subcategories within each category. Holds price per person and links to mandatory documents.
 
 | Field | Description |
 |---|---|
@@ -163,34 +188,19 @@ These tables contain static configuration data. They populate dropdowns, drive v
 | fldPricePerPerson | Cost in fldCurrency |
 | fldCurrency | Currency code (default USD) |
 | fldIsActive | Controls visibility |
+| fldSortOrder | Display order |
+| fldCreatedAt | Creation timestamp |
 
 **Relationships:**
 - FK to `tblApplicationCategories` via `fldApplicationCategoryID`
 - One subcategory → many mandatory documents (`tblSubcategoryMandatoryDocuments`)
-
----
-
-### tblDocumentTypes
-
-**Purpose:** Master list of all document types used across the system — for uploads, mandatory document lists, and dropdowns.
-
-| Field | Description |
-|---|---|
-| fldID | Primary key |
-| fldName | Display name |
-| fldCode | Short code (e.g. `FLIGHT`, `PHOTO`) |
-| fldIsActive | Controls visibility |
-| fldSortOrder | Display order |
-
-**Relationships:** Referenced by `tblSubcategoryMandatoryDocuments`, `tblFamilyMemberDocuments`, `tblGroupDocuments`, `tblApplicantDocuments`
-
-**Example values:** Passport, Bank Statement, Hotel Booking, Return Flight Ticket, Profile Photo, Yellow Fever Certificate
+- One subcategory → many permit document requirements (`tblPermitDocumentRequirement`)
 
 ---
 
 ### tblSubcategoryMandatoryDocuments
 
-**Purpose:** Junction table defining which document types are mandatory for each subcategory. Drives the mandatory documents display list in the application start screen.
+**Purpose:** Junction table defining which document types are mandatory for each visa subcategory. Drives the mandatory documents display list in the application start screen.
 
 | Field | Description |
 |---|---|
@@ -200,11 +210,53 @@ These tables contain static configuration data. They populate dropdowns, drive v
 
 **Relationships:** Many-to-many resolver between `tblApplicationSubcategories` and `tblDocumentTypes`
 
+> **Note:** This table serves visa-type applications. For permit-type applications with richer document requirement metadata, see `tblPermitDocumentRequirement`.
+
+---
+
+### tblPermitDocumentRequirement
+
+**Purpose:** Enhanced junction table defining document requirements per subcategory for permit-type applications. Extends the simple `tblSubcategoryMandatoryDocuments` pattern with mandatory/confirmation flags and notes.
+
+| Field | Description |
+|---|---|
+| fldPermitDocumentRequirementId | Primary key |
+| fldApplicationSubcategoryId | FK → tblApplicationSubcategories |
+| fldDocumentTypeId | FK → tblDocumentTypes |
+| fldIsMandatory | Whether the document is required (default 1) |
+| fldRequiresConfirmation | Whether an officer must confirm receipt (default 0) |
+| fldNotes | Additional guidance notes (nullable) |
+
+**Unique constraint:** `(fldApplicationSubcategoryId, fldDocumentTypeId)` — one rule per subcategory/document pair.
+
+**Relationships:**
+- FK to `tblApplicationSubcategories` via `fldApplicationSubcategoryId`
+- FK to `tblDocumentTypes` via `fldDocumentTypeId`
+
+---
+
+### tblDocumentTypes
+
+**Purpose:** Master list of all document types used across the system — uploads, mandatory document lists, and dropdowns.
+
+| Field | Description |
+|---|---|
+| fldID | Primary key |
+| fldName | Display name |
+| fldCode | Short code (e.g. `FLIGHT`, `PHOTO`) |
+| fldDescription | Optional description |
+| fldIsActive | Controls visibility |
+| fldSortOrder | Display order |
+
+**Relationships:** Referenced by `tblSubcategoryMandatoryDocuments`, `tblPermitDocumentRequirement`, `tblFamilyMemberDocuments`, `tblGroupMemberDocuments`, `tblGroupDocuments`, `tblPrincipleDocuments`
+
+**Example values:** Passport, Bank Statement, Hotel Booking, Return Flight Ticket, Profile Photo, Yellow Fever Certificate
+
 ---
 
 ### tblNationalities
 
-**Purpose:** Full country list with visa exemption and EAC membership indicators. Used for nationality, country of birth, and country of residence dropdowns across the system.
+**Purpose:** Full country list with visa exemption and EAC membership indicators.
 
 | Field | Description |
 |---|---|
@@ -217,7 +269,7 @@ These tables contain static configuration data. They populate dropdowns, drive v
 | fldIsEAC | 1 = East African Community member |
 | fldIsActive | Controls visibility |
 
-**Relationships:** Referenced by `tblFamilyMembers` and `tblApplicantPersonData` for both `fldNationalityID` and `fldCountryOfResidenceID`
+**Relationships:** Referenced by `tblPersonalProfileDetails` (fldNationalityID, fldCountryOfResidenceID) and `tblApplicantPersonData` (fldNationalityID, fldCountryOfResidenceID)
 
 ---
 
@@ -225,7 +277,7 @@ These tables contain static configuration data. They populate dropdowns, drive v
 
 **Purpose:** Valid passport type values.
 
-**Relationships:** Referenced by `tblFamilyMembers`, `tblApplicantPersonData`
+**Relationships:** Referenced by `tblPersonalProfileDetails`, `tblApplicantPersonData`
 
 **Values:** Ordinary, Diplomatic, Official/Service, ID Card, Other
 
@@ -235,7 +287,7 @@ These tables contain static configuration data. They populate dropdowns, drive v
 
 **Purpose:** Valid gender values.
 
-**Relationships:** Referenced by `tblFamilyMembers`, `tblApplicantPersonData`
+**Relationships:** Referenced by `tblPersonalProfileDetails`, `tblApplicantPersonData`
 
 **Values:** Male (M), Female (F)
 
@@ -245,7 +297,7 @@ These tables contain static configuration data. They populate dropdowns, drive v
 
 **Purpose:** Valid marital status values.
 
-**Relationships:** Referenced by `tblFamilyMembers`, `tblApplicantPersonData`, `tblVisaApplicationNewPrincipalInfo`
+**Relationships:** Referenced by `tblPersonalProfileDetails`, `tblApplicantPersonData`
 
 **Values:** Single, Married, Divorced, Widowed, Separated, Other
 
@@ -253,9 +305,9 @@ These tables contain static configuration data. They populate dropdowns, drive v
 
 ### tblGuardianRelationships
 
-**Purpose:** Valid legal guardian relationship types — used when a minor is added to a family or application.
+**Purpose:** Valid legal guardian relationship types — used when establishing a guardian link for a minor in `tblGuardian`.
 
-**Relationships:** Referenced by `tblFamilyMembers`, `tblApplicationFamilyMembers`
+**Relationships:** Referenced by `tblGuardian` via `fldGuardianTypeId`
 
 **Values:** Parent, Court Appointed Guardian, Testamentary Guardian, Foster Parent
 
@@ -263,11 +315,29 @@ These tables contain static configuration data. They populate dropdowns, drive v
 
 ### tblGroupMemberTypes
 
-**Purpose:** Defines the role a member plays within a group or on an application.
+**Purpose:** Defines the role a member plays within a group.
 
-**Relationships:** Referenced by `tblGroupMembers`, `tblApplicationFamilyMembers`, `tblApplicationGroupMembers`
+**Relationships:** Referenced by `tblGroupMembers` via `fldMemberTypeID`
 
 **Values:** Principal, Responsible, Group Member
+
+---
+
+### tblGroupTypes
+
+**Purpose:** Valid group type values — used to classify the nature of a group (e.g. Tour, Corporate, School).
+
+| Field | Description |
+|---|---|
+| fldID | Primary key |
+| fldName | Display name |
+| fldCode | Unique short code |
+| fldIsActive | Controls visibility (default 1) |
+| fldSortOrder | Display order (default 0) |
+
+**Unique constraint:** `fldCode`
+
+**Relationships:** Referenced by `tblGroups` via `fldGroupTypeID`
 
 ---
 
@@ -287,8 +357,12 @@ These tables contain static configuration data. They populate dropdowns, drive v
 
 | Field | Description |
 |---|---|
+| fldID | Primary key |
+| fldName | Entry point name |
 | fldType | Airport, Land, or Water |
 | fldRegion | Geographic region within Uganda |
+| fldIsActive | Controls visibility |
+| fldSortOrder | Display order |
 
 **Relationships:** Referenced by `tblApplicantPersonData` via `fldPointOfEntryID`
 
@@ -300,7 +374,7 @@ These tables contain static configuration data. They populate dropdowns, drive v
 
 **Purpose:** Immigration status of the applicant in their country of residence.
 
-**Relationships:** Referenced by `tblApplicantPersonData`, `tblFamilyMembers`
+**Relationships:** Referenced by `tblPersonalProfileDetails`, `tblApplicantPersonData`
 
 **Values:** Citizen, Student, Tourist, Work, Other
 
@@ -308,17 +382,44 @@ These tables contain static configuration data. They populate dropdowns, drive v
 
 ### tblReasons
 
-**Purpose:** Unified reasons table covering all reason dropdown lists across the system. A single `fldReasonType` discriminator column identifies which list each row belongs to — avoiding ten near-identical separate tables.
+**Purpose:** Unified reasons table covering all reason dropdowns across the system. A single `fldReasonType` discriminator identifies which list each row belongs to.
 
 | Field | Description |
 |---|---|
-| fldReasonType | Discriminator — see types below |
+| fldID | Primary key |
+| fldReasonType | Discriminator — see full list below |
 | fldName | Display name |
 | fldCode | Short code |
+| fldIsActive | Controls visibility (default 1) |
+| fldSortOrder | Display order (default 0) |
 
-**Reason types:** FamilyRemoval, LeaveGroup, LeaveFamily, RemovalFromFamily, RemovalFromGroup, RemovalFromApplication, Cancellation, Referral, Defer, ApplicantRemoval
+**Unique constraint:** `(fldReasonType, fldCode)`
 
-**Relationships:** Referenced by `tblVisaApplicationSubmitted`, `tblVisaApplicationApprovalHistory`, `tblFamilyMembers`, `tblGroupMembers`, `tblApplicationFamilyMembers`, `tblApplicationGroupMembers`
+**Full list of fldReasonType values:**
+
+| ReasonType | Used by |
+|---|---|
+| FamilyRemoval | tblFamilyMembers |
+| LeaveFamily | tblFamilyMembers |
+| RemovalFromFamily | tblFamilyMembers |
+| LeaveGroup | tblGroupMembers |
+| RemovalFromGroup | tblGroupMembers |
+| RemovalFromApplication | tblVisaApplicationSubmitted |
+| Cancellation | tblVisaApplicationSubmitted |
+| CancellationByUser | tblVisaApplicationSubmitted |
+| Defer | tblVisaApplicationSubmitted |
+| Referral | tblVisaApplicationSubmitted |
+| ApplicantRemoval | tblVisaApplicationSubmitted |
+| Rejection | tblVisaApplicationApprovalHistory |
+| Internship | Permit workflow |
+| Research | Permit workflow |
+| SpecialPass | Permit workflow |
+| Deprivation | Permit workflow |
+| NationalityLost | Permit workflow |
+| RejectCitizenship | Permit workflow |
+| ToSecondary | Permit workflow |
+
+**Relationships:** Referenced by `tblVisaApplicationSubmitted` (×3), `tblVisaApplicationApprovalHistory`, `tblFamilyMembers`, `tblGroupMembers`, `tblGroups`
 
 ---
 
@@ -326,90 +427,130 @@ These tables contain static configuration data. They populate dropdowns, drive v
 
 **Purpose:** Immigration departments — used when an application is referred to a specific department.
 
+| Field | Description |
+|---|---|
+| fldID | Primary key |
+| fldName | Department name |
+| fldCode | Short code |
+| fldManagerName | Department manager |
+| fldEmail | Contact email |
+| fldIsActive | Controls visibility |
+| fldCreatedAt | Creation timestamp |
+
 **Relationships:** Referenced by `tblVisaApplicationSubmitted` via `fldReferDepartmentID` and `tblVisaApplicationApprovalHistory` via `fldDepartmentID`
 
 ---
 
 ---
 
-## Section 2 — User Identity Tables
+## Section 2 — User Identity & Person Data
 
-These tables manage the portal user's identity and their initial profile data completed during registration.
+These tables manage portal user identity and the central person record that anchors all personal data across the system.
 
 ---
 
 ### tblSecUserMap
 
-**Purpose:** Permanent identity bridge between the portal user account (`Uganda_Portal.dbo.SecUsers`) and all `Uganda_Forms` transaction data. The `fldUserKey` GUID is the stable identity used as a FK across every transaction table. It never changes even when the portal authentication token rotates.
+**Purpose:** Permanent identity bridge between the Uganda Portal user account and the `Uganda_Visa_Applications` database. Provides a stable integer PK (`fldID`) used as FK by most tables, plus a GUID (`fldUserKey`) used by tables that were set up with GUID-based identity.
 
 | Field | Description |
 |---|---|
-| fldSecUserID | FK → Uganda_Portal.dbo.SecUsers.ID |
-| fldUserKey | Permanent UNIQUEIDENTIFIER — used as FK everywhere |
+| fldID | Primary key (int) — used as FK by most tables in this database |
+| fldUUID | Unique nvarchar(50) — alternate identifier (nullable) |
+| fldUserKey | Unique UNIQUEIDENTIFIER — used as FK by tblGroups.fldOwnerKey |
+| fldPortalSecUserId | Unique int (nullable) — links to Uganda_Portal.dbo.SecUsers |
 | fldDisplayName | Snapshot of user's display name |
 | fldCreatedAt | When the map entry was first created |
 | fldLastSeenAt | Last activity timestamp |
+| fldLastUpdatedAt | Last profile update timestamp |
 
-**Relationships:** Central identity hub — virtually every transaction table in Uganda_Forms has a FK back to this table via `fldUserKey`. One entry is created the first time a user submits passport details.
-
----
-
-### tblVisaApplicationPassport
-
-**Purpose:** Stores the passport image (base64) uploaded during step 1 of account registration. One record per portal user.
-
-| Field | Description |
-|---|---|
-| fldUUID | Stable UUID used to link to passport details |
-| fldPortalUserID | FK → Uganda_Portal.dbo.SecUsers |
-| fldBase64 | Raw base64 image string |
-| fldFileExt | File extension (.jpg, .pdf, etc.) |
-| fldBase64Converted | Computed — full data URI for rendering |
-| fldStatus | Processing status of the upload |
+> **FK usage:** Most tables use `fldID` (int) as their FK to this table. `tblGroups.fldOwnerKey` is the exception — it uses `fldUserKey` (uniqueidentifier). Always check which identifier a table's FK column references.
 
 **Relationships:**
-- FK to `Uganda_Portal.dbo.SecUsers` via `fldPortalUserID`
-- Linked to `tblVisaApplicationPassportDetails` via `fldUUID`
+- Links to `Uganda_Portal.dbo.SecUsers` via `fldPortalSecUserId`
+- Referenced by `tblPersonalProfileDetails` via `fldSecUserId`
+- Referenced by `tblVisaApplicationSubmitted` via `fldUserId`
+- Referenced by `tblGroups` via `fldOwnerKey` (GUID)
 
 ---
 
-### tblVisaApplicationPassportDetails
+### tblPersonalProfileDetails
 
-**Purpose:** Personal details extracted from the passport — entered during step 2 of account registration. One record per portal user.
+**Purpose:** Central person record for the entire system. Every person — portal users, manually added family members, and group members — has one record here. Portal users have `fldSecUserId` populated; non-portal persons (manually added members) have `fldSecUserId = NULL`.
+
+This table stores complete personal, passport, contact, and profile photo data.
 
 | Field | Description |
 |---|---|
-| fldUUID | FK → tblVisaApplicationPassport.fldUUID |
-| fldUserKey | FK → tblSecUserMap |
-| fldFirstName, fldSurname | Personal name |
-| fldDOB | Date of birth |
-| fldGender, fldNationality | Demographics |
-| fldPassportNumber | Passport identifier |
-| fldPassportExpDate | Expiry date |
+| fldID | Primary key (int) — used as FK across family, group, and application tables |
+| fldSecUserId | FK → tblSecUserMap.fldID (nullable — non-portal persons have no portal account) |
+| fldFirstName | First name (nullable during registration completion) |
+| fldMiddleName | Middle name (nullable) |
+| fldSurname | Surname (nullable during registration completion) |
+| fldDOB | Date of birth (nullable) — check: must be < today |
+| fldGenderID | FK → tblGenders (nullable) |
+| fldNationalityID | FK → tblNationalities (nullable) |
+| fldCountryOfBirth | Free text varchar(100) — not a FK |
+| fldPlaceOfBirth | Free text varchar(200) (nullable) |
+| fldMaritalStatusID | FK → tblMaritalStatuses (nullable) |
+| fldPassportTypeID | FK → tblPassportTypes (nullable) |
+| fldPassportNumber | Unique across entire system (uq_PassportNumber) |
+| fldPassportIssuingCountry | Passport issuing country varchar(100) (nullable) |
+| fldPassportIssuingLocation | Passport issuing office varchar(200) (nullable) |
+| fldPassportDateOfIssue | Date passport was issued — check: < fldPassportExpDate |
+| fldPassportExpDate | Passport expiry date |
+| fldPassportBase64 | Raw base64 passport image (nullable) |
+| fldPassportFileExt | File extension (.jpg, .jpeg, .png, .bmp, .pdf) |
+| fldPassportBase64Converted | Computed PERSISTED — full data URI for rendering |
+| fldPassportExpired | Computed — 1 if PassportExpDate < today |
+| fldPassportExpiringSoon | Computed — 1 if PassportExpDate < today + 6 months |
+| fldProfileBase64 | Raw base64 profile photo (nullable) |
+| fldProfileFileExt | Profile photo file extension (nullable) |
+| fldProfileBase64Converted | Computed PERSISTED — full data URI for profile photo |
+| fldCurrentResidentialAdd | Home address varchar(400) (nullable) |
+| fldCityOfResidence | City varchar(200) (nullable) |
+| fldCountryOfResidenceID | FK → tblNationalities (nullable) |
+| fldImmigrationStatusID | FK → tblImmigrationStatuses (nullable) |
+| fldCountryPhoneCode | Dial code — check: must start with '+' (nullable) |
+| fldPhoneNumber | Phone number varchar(15) (nullable) |
+| fldFullPhoneNumber | Computed PERSISTED — concatenated phone |
+| fldEmail | Email varchar(200) (nullable) |
+| fldPrincipalInfoCaptured | bit — 0 = profile incomplete, 1 = all required data entered (default 0) |
+| fldIsMinor | Computed — 1 if age < 18 based on fldDOB |
+| fldCreatedAt | Creation timestamp |
+| fldUpdatedAt | Last updated timestamp |
+
+**Unique constraint:** `fldPassportNumber` — a passport number identifies one person across the entire system.
 
 **Relationships:**
-- FK to `tblVisaApplicationPassport` via `fldUUID`
-- FK to `tblSecUserMap` via `fldUserKey`
+- FK to `tblSecUserMap` via `fldSecUserId` (nullable)
+- FK to `tblGenders`, `tblNationalities` (×2), `tblMaritalStatuses`, `tblPassportTypes`, `tblImmigrationStatuses`
+- Referenced by `tblFamilies` via `fldUserId` — family owner
+- Referenced by `tblFamilyMembers` via `fldUserId` — family member person record
+- Referenced by `tblGroups` via `fldPersonId` — group owner's person record
+- Referenced by `tblGroupMembers` via `fldUserId` — group member person record
+- Referenced by `tblApplicantPersonData` via `fldUserId`
+- Referenced by `tblGuardian` via `fldUserId` and `fldGuardianId`
+- Referenced by `tblGroupDocuments` via `fldUploadedBy`
 
 ---
 
-### tblVisaApplicationNewPrincipalInfo
+### tblGuardian
 
-**Purpose:** Contact and residence details for the principal — entered during step 3 of account registration. One record per portal user.
+**Purpose:** Junction table establishing a legal guardian relationship between a minor and their guardian. Both the minor and the guardian are `tblPersonalProfileDetails` records.
 
 | Field | Description |
 |---|---|
-| fldUserKey | FK → tblSecUserMap |
-| fldCountryOfBirth, fldPlaceOfBirth | Birth details |
-| fldMaritalStatus | Marital status |
-| fldCurrentResidentialAdd | Home address |
-| fldCityOfResidence, fldCountryOfResidence | Location |
-| fldCountryPhoneCode, fldPhoneNumber | Contact |
-| fldFullPhoneNumber | Computed — concatenated phone |
+| fldId | Primary key |
+| fldUserId | FK → tblPersonalProfileDetails.fldID — the minor |
+| fldGuardianId | FK → tblPersonalProfileDetails.fldID — the guardian |
+| fldGuardianTypeId | FK → tblGuardianRelationships — nature of relationship |
+| fldIsActive | Whether the guardian relationship is current (default 1) |
 
-**Relationships:** FK to `tblSecUserMap` via `fldUserKey`
-
-> Together, `tblVisaApplicationPassport`, `tblVisaApplicationPassportDetails`, and `tblVisaApplicationNewPrincipalInfo` represent the complete principal profile captured at registration.
+**Relationships:**
+- FK to `tblPersonalProfileDetails` via `fldUserId` (minor)
+- FK to `tblPersonalProfileDetails` via `fldGuardianId` (guardian)
+- FK to `tblGuardianRelationships` via `fldGuardianTypeId`
 
 ---
 
@@ -417,67 +558,75 @@ These tables manage the portal user's identity and their initial profile data co
 
 ## Section 3 — Family Management Tables
 
-These tables allow the principal to build and manage their family unit before starting any application. Data here is editable at any time — changes do not affect already-submitted applications.
+These tables allow the principal to build and manage their family unit before starting any application.
+
+> **Design note:** `tblFamilies` and `tblFamilyMembers` are **lean junction tables**. No personal data is stored in them — all personal and passport data lives in `tblPersonalProfileDetails`. To get a family member's details, always JOIN to `tblPersonalProfileDetails` via `fldUserId`.
 
 ---
 
 ### tblFamilies
 
-**Purpose:** A family unit created and owned by the principal. One family per principal (enforced by UNIQUE constraint on `fldOwnerKey`).
+**Purpose:** A family unit owned by the principal. One family per principal person.
 
 | Field | Description |
 |---|---|
-| fldOwnerKey | FK → tblSecUserMap — the principal who created the family |
-| fldIsActive | Soft delete flag |
+| fldID | Primary key |
+| fldUserId | FK → tblPersonalProfileDetails.fldID — the principal who owns the family |
+| fldIsActive | Soft delete flag (default 1) |
+| fldCreatedAt | Creation timestamp |
+| fldUpdatedAt | Last updated timestamp |
 
 **Relationships:**
-- FK to `tblSecUserMap` via `fldOwnerKey`
+- FK to `tblPersonalProfileDetails` via `fldUserId`
 - One family → many members (`tblFamilyMembers`)
+- Referenced by `tblVisaApplicationSubmitted` via `fldFamilyGroupID`
 
 ---
 
 ### tblFamilyMembers
 
-**Purpose:** Individual family members added to a family unit. Holds complete personal and passport data for each member. Members may or may not have their own portal account — `fldMemberUserKey` is nullable to support minors and dependants without accounts.
+**Purpose:** Junction table linking a person to a family. The member's personal data lives in `tblPersonalProfileDetails` — this table holds only membership status and relationship information.
 
 | Field | Description |
 |---|---|
+| fldID | Primary key |
 | fldFamilyID | FK → tblFamilies |
-| fldMemberUserKey | FK → tblSecUserMap (nullable) |
-| fldIsMinor | Computed from DOB vs AdultAge setting |
-| fldGuardianRelID | FK → tblGuardianRelationships (if minor) |
-| fldGuardianUserKey | FK → tblSecUserMap — responsible adult |
-| fldPassportExpired | Computed — is passport currently expired |
-| fldPassportExpiringSoon | Computed — expires within 6-month buffer |
-| fldPassportBase64Converted | Computed — full data URI for rendering |
-| fldStatus | Active, Removed, or Left |
-| fldRemovalReasonID | FK → tblReasons |
+| fldUserId | FK → tblPersonalProfileDetails.fldID — the member's person record |
+| fldRelationship | Free text nvarchar(50) — e.g. Spouse, Child, Sibling (nullable, not a FK) |
+| fldStatus | 'Active', 'Removed', or 'Left' (default 'Active') |
+| fldRemovalReasonID | FK → tblReasons (nullable) |
+| fldRemovalComment | nvarchar(500) (nullable) |
+| fldRemovedAt | Removal timestamp (nullable) |
+| fldCreatedAt | Creation timestamp |
+| fldUpdatedAt | Last updated timestamp |
 
 **Relationships:**
-- FK to `tblFamilies`, `tblSecUserMap` (×3), `tblGuardianRelationships`
-- FK to all personal data lookups: `tblGenders`, `tblNationalities`, `tblMaritalStatuses`, `tblPassportTypes`, `tblImmigrationStatuses`
-- Referenced by `tblFamilyMemberDocuments`, `tblApplicationFamilyMembers`
-
-> **Note:** `tblFamilyMembers` is **not** referenced by `tblGroupMembers`. Group members are independent persons managed separately.
+- FK to `tblFamilies` via `fldFamilyID`
+- FK to `tblPersonalProfileDetails` via `fldUserId`
+- FK to `tblReasons` via `fldRemovalReasonID`
+- One member → many documents (`tblFamilyMemberDocuments`)
 
 ---
 
 ### tblFamilyMemberDocuments
 
-**Purpose:** Documents uploaded against a specific family member — independent of any application. These are the source documents that are referenced (and their data copied) when a member is included on an application.
+**Purpose:** Documents uploaded against a specific family member, independent of any application.
 
 | Field | Description |
 |---|---|
+| fldID | Primary key |
 | fldFamilyMemberID | FK → tblFamilyMembers |
-| fldDocumentTypeID | FK → tblDocumentTypes |
-| fldOtherDocTypeName | Free text when type = Other |
-| fldBase64Converted | Computed — full data URI |
+| fldDocumentID | Soft reference to source document requirement (NOT NULL, no FK enforced) |
+| fldDocumentTypeId | FK → tblDocumentTypes |
+| fldOtherDocTypeName | Free text when type = Other (nullable) |
+| fldFileExt | File extension (.jpg, .jpeg, .png, .bmp, .pdf) |
+| fldBase64 | Raw base64 document content |
+| fldBase64Converted | Computed PERSISTED — full data URI |
+| fldUploadedAt | Upload timestamp (default sysutcdatetime()) |
 
 **Relationships:**
-- FK to `tblFamilyMembers`, `tblDocumentTypes`
-- Referenced by `tblApplicationFamilyMemberDocuments` via `fldFamilyMemberDocumentID` for traceability
-
-> **Note:** `tblFamilyMemberDocuments` is not referenced by group member document tables. Group document traceability flows through `tblGroupDocuments` only.
+- FK to `tblFamilyMembers` via `fldFamilyMemberID`
+- FK to `tblDocumentTypes` via `fldDocumentTypeId`
 
 ---
 
@@ -487,83 +636,117 @@ These tables allow the principal to build and manage their family unit before st
 
 These tables allow the principal to create and manage named groups before starting any application. One principal can own multiple groups.
 
+> **Design note:** `tblGroupMembers` is a **lean junction table** — no personal data is stored here. All personal and passport data lives in `tblPersonalProfileDetails`. To get a group member's details, always JOIN to `tblPersonalProfileDetails` via `fldUserId`.
+
+> **Family vs Group distinction:** Family members have a personal relationship with the principal (spouse, child, dependant). Group members are independent persons in a named group (tour travellers, corporate delegates, sports teams, school trips) with no required family relationship to the principal.
+
 ---
 
 ### tblGroups
 
-**Purpose:** A named group created by the principal. Holds group type and contact person details as per BRD section 25.
+**Purpose:** A named group created and owned by the principal. Holds group type, contact details, and deactivation tracking.
 
 | Field | Description |
 |---|---|
-| fldOwnerKey | FK → tblSecUserMap |
+| fldID | Primary key |
+| fldOwnerKey | FK → tblSecUserMap.fldUserKey (GUID) — portal user who created the group |
+| fldPersonId | FK → tblPersonalProfileDetails.fldID — principal's person record |
 | fldGroupName | Display name of the group |
-| fldGroupType | Type of group (e.g. Tour Group, Corporate, School) |
-| fldContactFirstName, fldContactSurname | Contact person |
-| fldContactPhoneCode, fldContactPhoneNumber | Contact phone |
-| fldContactFullPhone | Computed — concatenated phone |
+| fldGroupType | Free text group type varchar(50) |
+| fldGroupTypeID | FK → tblGroupTypes (nullable) — structured group type |
+| fldContactFirstName | Contact person first name |
+| fldContactSurname | Contact person surname |
+| fldContactPhoneCode | Dial code — check: must start with '+' |
+| fldContactPhoneNumber | Contact phone number |
+| fldContactFullPhone | Computed PERSISTED — concatenated phone |
+| fldIsActive | Whether the group is active (default 1) |
+| fldDeactivationReasonID | FK → tblReasons (nullable) |
+| fldDeactivationComment | nvarchar(500) (nullable) |
+| fldCreatedAt | Creation timestamp |
+| fldUpdatedAt | Last updated timestamp |
 
 **Relationships:**
-- FK to `tblSecUserMap` via `fldOwnerKey`
+- FK to `tblSecUserMap` via `fldOwnerKey` (GUID)
+- FK to `tblPersonalProfileDetails` via `fldPersonId`
+- FK to `tblGroupTypes` via `fldGroupTypeID`
+- FK to `tblReasons` via `fldDeactivationReasonID`
 - One group → many members (`tblGroupMembers`)
-- One group → many documents (`tblGroupDocuments`)
-- Referenced by `tblApplicationGroups` via `fldGroupID` for traceability
+- One group → many group-level documents (`tblGroupDocuments`)
+- Referenced by `tblVisaApplicationSubmitted` via `fldGroupID`
 
 ---
 
 ### tblGroupMembers
 
-**Purpose:** Members of a named group — each member is an independent person who does **not** need to be a family member of the principal. Holds complete personal and passport data directly on this table. Typical members: tour group travellers, corporate delegates, sports team members, school trip students.
+**Purpose:** Junction table linking a person to a group with a member type role. Personal data lives in `tblPersonalProfileDetails`.
 
 | Field | Description |
 |---|---|
+| fldID | Primary key |
 | fldGroupID | FK → tblGroups |
-| fldMemberUserKey | FK → tblSecUserMap (nullable — member may have no portal account) |
-| fldMemberTypeID | FK → tblGroupMemberTypes |
-| fldFirstName, fldMiddleName, fldSurname | Personal name — stored directly |
-| fldDOB | Date of birth |
-| fldGenderID | FK → tblGenders |
-| fldNationalityID | FK → tblNationalities |
-| fldCountryOfBirth, fldPlaceOfBirth | Birth details |
-| fldMaritalStatusID | FK → tblMaritalStatuses |
-| fldCountryOfResidenceID | FK → tblNationalities |
-| fldImmigrationStatusID | FK → tblImmigrationStatuses |
-| fldCountryPhoneCode, fldPhoneNumber | Contact (nullable) |
-| fldFullPhoneNumber | Computed PERSISTED — concatenated phone |
-| fldEmail | Email (nullable) |
-| fldPassportTypeID | FK → tblPassportTypes |
-| fldPassportNumber | Unique per group |
-| fldPassportIssuingCountry, fldPassportIssuingLocation | Issuing details |
-| fldPassportDateOfIssue, fldPassportExpDate | Passport validity dates |
-| fldPassportExpired | Computed — live check |
-| fldPassportExpiringSoon | Computed — within 6-month buffer |
-| fldPassportBase64 | Raw passport image base64 |
-| fldPassportFileExt | File extension |
-| fldPassportBase64Converted | Computed PERSISTED — full data URI |
-| fldStatus | Active, Removed, or Left |
-| fldRemovalReasonID | FK → tblReasons (type=RemovalFromGroup) |
+| fldUserId | FK → tblPersonalProfileDetails.fldID — the member's person record |
+| fldMemberTypeID | FK → tblGroupMemberTypes — role in the group |
+| fldStatus | 'Active', 'Removed', or 'Left' (default 'Active') |
+| fldRemovalReasonID | FK → tblReasons (nullable) |
+| fldRemovalComment | nvarchar(500) (nullable) |
+| fldRemovedAt | Removal timestamp (nullable) |
+| fldCreatedAt | Creation timestamp |
+| fldUpdatedAt | Last updated timestamp |
 
-**Unique constraint:** `(fldGroupID, fldPassportNumber)` — one entry per passport per group.
-
-**Relationships:** FK to `tblGroups`, `tblSecUserMap` (nullable), `tblGroupMemberTypes`, `tblGenders`, `tblNationalities` (×2), `tblMaritalStatuses`, `tblPassportTypes`, `tblImmigrationStatuses`, `tblReasons`
-
-> **No FK to tblFamilyMembers.** This is intentional — group members are completely independent of the family management tables.
+**Relationships:**
+- FK to `tblGroups` via `fldGroupID`
+- FK to `tblPersonalProfileDetails` via `fldUserId`
+- FK to `tblGroupMemberTypes` via `fldMemberTypeID`
+- FK to `tblReasons` via `fldRemovalReasonID`
+- One member → many documents (`tblGroupMemberDocuments`)
 
 ---
 
 ### tblGroupDocuments
 
-**Purpose:** Documents common to all members of a group — uploaded at group level rather than per member. Independent of any application.
+**Purpose:** Documents uploaded at group level — shared across all members of a group. Stored in both the local database and the Laserfiche document repository.
 
 | Field | Description |
 |---|---|
+| fldID | Primary key |
 | fldGroupID | FK → tblGroups |
-| fldDocumentTypeID | FK → tblDocumentTypes |
-| fldOtherDocTypeName | Free text when type = Other |
-| fldBase64Converted | Computed — full data URI |
+| fldDocumentTypeId | FK → tblDocumentTypes |
+| fldOtherDocTypeName | Free text when type = Other (nullable) |
+| fldRepoId | Laserfiche document repository entry ID (int, NOT NULL — no FK enforced) |
+| fldFileExt | File extension (.jpg, .jpeg, .png, .bmp, .pdf) |
+| fldBase64 | Raw base64 document content |
+| fldBase64Converted | Computed PERSISTED — full data URI |
+| fldUploadedAt | Upload timestamp (default sysutcdatetime()) |
+| fldUploadedBy | FK → tblPersonalProfileDetails.fldID — who uploaded (nullable) |
 
 **Relationships:**
-- FK to `tblGroups`, `tblDocumentTypes`
-- Referenced by `tblApplicationGroupMemberDocuments` via `fldGroupDocumentID` for traceability
+- FK to `tblGroups` via `fldGroupID`
+- FK to `tblDocumentTypes` via `fldDocumentTypeId`
+- FK to `tblPersonalProfileDetails` via `fldUploadedBy`
+
+> `fldRepoId` references the Laserfiche document management system — no FK constraint in the database.
+
+---
+
+### tblGroupMemberDocuments
+
+**Purpose:** Documents uploaded against a specific group member, independent of any application.
+
+| Field | Description |
+|---|---|
+| fldID | Primary key |
+| fldGroupMemberID | FK → tblGroupMembers |
+| fldDocumentID | Soft reference to source document requirement (nullable, no FK enforced) |
+| fldDocumentTypeId | FK → tblDocumentTypes |
+| fldOtherDocTypeName | Free text when type = Other (nullable) |
+| fldFileExt | File extension (.jpg, .jpeg, .png, .bmp, .pdf) |
+| fldBase64 | Raw base64 document content |
+| fldBase64Converted | Computed PERSISTED — full data URI |
+| fldUploadedAt | Upload timestamp (default sysutcdatetime()) |
+
+**Relationships:**
+- FK to `tblGroupMembers` via `fldGroupMemberID`
+- FK to `tblDocumentTypes` via `fldDocumentTypeId`
 
 ---
 
@@ -571,56 +754,80 @@ These tables allow the principal to create and manage named groups before starti
 
 ## Section 5 — Application Master Tables
 
-The core application transaction tables. `tblVisaApplicationSubmitted` is the central table — all other application tables FK back to it.
+`tblVisaApplicationSubmitted` is the central application table — all other application tables FK back to it.
 
 ---
 
 ### tblVisaApplicationSubmitted
 
-**Purpose:** Master application record — one row per application. Tracks the full lifecycle from Draft through to Approved/Rejected.
+**Purpose:** Master application record — one row per application. Tracks the full lifecycle from Draft through to Approved/Rejected/Cancelled.
 
 | Field | Description |
 |---|---|
-| fldApplicationRef | Computed — human-readable reference e.g. UGA-00000001 |
-| fldUserKey | FK → tblSecUserMap — the principal applicant |
+| fldID | Primary key |
+| fldUserId | FK → tblSecUserMap.fldID — the principal applicant |
+| fldApplicationRef | Application reference varchar(50) (nullable — populated after creation) |
 | fldApplicationTypeID | FK → tblApplicationTypes |
 | fldApplicationCategoryID | FK → tblApplicationCategories |
 | fldApplicationSubcatID | FK → tblApplicationSubcategories |
-| fldIsFamilyApplication | Flag — includes family members |
-| fldIsGroupApplication | Flag — includes group members |
-| fldGroupID | FK → tblApplicationGroups (when group application) |
-| fldStatus | Full lifecycle status — see values below |
-| fldQueue | Processing or Approval — tracks which officer queue |
-| fldDeferCount | Incremented each time application is deferred |
-| fldDeferReasonID | FK → tblReasons (type=Defer) |
-| fldCancelReasonID | FK → tblReasons (type=Cancellation) |
-| fldReferReasonID | FK → tblReasons (type=Referral) |
-| fldReferDepartmentID | FK → tblDepartments |
-| fldPaymentStatus | Unpaid, Paid, Waived, Refunded |
-| fldSubmittedAt | Write-once — stamped when first submitted |
+| fldIsFamilyApplication | 1 = includes family members (default 0) |
+| fldFamilyGroupID | FK → tblFamilies (nullable — set when family application) |
+| fldIsGroupApplication | 1 = includes group members (default 0) |
+| fldGroupID | FK → tblGroups (nullable — set when group application) |
+| fldStatus | Full lifecycle status (default 'Draft') — see values below |
+| fldQueue | 'Processing', 'Approval', or NULL |
+| fldDeferCount | Number of times deferred (default 0, check: >= 0) |
+| fldDeferReasonID | FK → tblReasons (type=Defer, nullable) |
+| fldDeferComment | Defer notes nvarchar(500) (nullable) |
+| fldDeferredAt | When deferred (nullable) |
+| fldDeferDocumentsRequired | List of required documents nvarchar(max) (nullable) |
+| fldCancelReasonID | FK → tblReasons (type=Cancellation, nullable) |
+| fldCancelComment | Cancellation notes nvarchar(500) (nullable) |
+| fldCancelledAt | When cancelled (nullable) |
+| fldCancelledBy | Who cancelled nvarchar(100) (nullable) |
+| fldReferReasonID | FK → tblReasons (type=Referral, nullable) |
+| fldReferComment | Referral notes nvarchar(500) (nullable) |
+| fldReferredAt | When referred (nullable) |
+| fldReferredTo | Referred to officer nvarchar(100) (nullable) |
+| fldReferDepartmentID | FK → tblDepartments (nullable) |
+| fldPricePerPerson | Application fee decimal(10,2) (default 0.00) |
+| fldCurrency | Currency code varchar(5) (default 'USD') |
+| fldPaymentStatus | 'Unpaid', 'Paid', 'Waived', or 'Refunded' (default 'Unpaid') |
+| fldPaymentRef | Payment reference varchar(100) (nullable) |
+| fldPaidAt | Payment timestamp (nullable) |
+| fldSubmittedAt | Write-once — stamped on first submission (nullable) |
+| fldCreatedAt | Record creation timestamp |
+| fldUpdatedAt | Last updated timestamp |
 
 **Status values:** Draft → Submitted → Awaiting Processing → Under Review → Awaiting Approval → Approved / Rejected / Defer / Defer & Hold / Refer / Withdrawn / Cancelled
 
 **Relationships:**
-- FK to `tblSecUserMap`, `tblApplicationTypes`, `tblApplicationCategories`, `tblApplicationSubcategories`, `tblApplicationGroups`, `tblReasons` (×3), `tblDepartments`
-- Referenced by all application child tables as the anchor FK
+- FK to `tblSecUserMap` via `fldUserId`
+- FK to `tblFamilies` via `fldFamilyGroupID` (nullable)
+- FK to `tblGroups` via `fldGroupID` (nullable)
+- FK to `tblApplicationTypes`, `tblApplicationCategories`, `tblApplicationSubcategories`
+- FK to `tblReasons` (×3: defer, cancel, refer)
+- FK to `tblDepartments` via `fldReferDepartmentID`
+- Referenced by `tblApplicantPersonData`, `tblPrincipleDocuments`, `tblVisaApplicationApprovalHistory`, `tblSupervisorNotifications`
 
 ---
 
 ### tblVisaApplicationApprovalHistory
 
-**Purpose:** Append-only audit trail of every status change on an application. Auto-populated by a trigger on `tblVisaApplicationSubmitted` when `fldStatus` changes. Records are never updated.
+**Purpose:** Append-only audit trail of every status change on an application. Auto-populated by a trigger on `tblVisaApplicationSubmitted`. Records are never updated or deleted.
 
 | Field | Description |
 |---|---|
+| fldID | Primary key |
 | fldApplicationID | FK → tblVisaApplicationSubmitted |
-| fldAction | New status value |
-| fldPreviousStatus | What status was before this change |
-| fldQueue | Which queue at time of action |
-| fldReasonID | FK → tblReasons |
+| fldAction | The new status value applied |
+| fldPreviousStatus | Status before this change (nullable) |
+| fldQueue | Which queue at time of action (nullable) |
+| fldReasonID | FK → tblReasons (nullable) |
 | fldActionedBy | Officer username or SYSTEM_USER |
-| fldActionedAt | Timestamp |
-| fldDepartmentID | FK → tblDepartments (for referrals) |
+| fldActionedAt | Timestamp (default sysutcdatetime()) |
+| fldComments | Free text notes nvarchar(500) (nullable) |
+| fldDepartmentID | FK → tblDepartments (for referrals, nullable) |
 
 **Relationships:** FK to `tblVisaApplicationSubmitted`, `tblReasons`, `tblDepartments`
 
@@ -628,14 +835,16 @@ The core application transaction tables. `tblVisaApplicationSubmitted` is the ce
 
 ### tblSupervisorNotifications
 
-**Purpose:** Outbox queue for supervisor alert emails. Populated automatically by a trigger when an application's `fldDeferCount` exceeds the `MaxDeferCount` setting. Polled by the application layer to send emails.
+**Purpose:** Outbox queue for supervisor alert emails. Populated automatically by a trigger when an application's `fldDeferCount` exceeds the `MaxDeferCount` setting.
 
 | Field | Description |
 |---|---|
+| fldID | Primary key |
 | fldApplicationID | FK → tblVisaApplicationSubmitted |
-| fldDeferCount | Count at time of trigger |
-| fldIsSent | 0 = pending, 1 = email dispatched |
-| fldSentAt | When the email was sent |
+| fldDeferCount | Defer count at time notification was created |
+| fldIsSent | 0 = pending, 1 = email dispatched (default 0) |
+| fldSentAt | When the email was sent (nullable) |
+| fldCreatedAt | When the notification was created |
 
 **Relationships:** FK to `tblVisaApplicationSubmitted`
 
@@ -645,50 +854,79 @@ The core application transaction tables. `tblVisaApplicationSubmitted` is the ce
 
 ## Section 6 — Application Person Data
 
-Applicant-level data captured per person directly on the application.
+Person data captured specifically for an application — linked to both the person record and the application.
 
 ---
 
 ### tblApplicantPersonData
 
-**Purpose:** Complete personal, passport, contact, and travel background data for the principal applicant. Covers BRD sections 8.3.7–8.3.10. One record per applicant per application.
+**Purpose:** Full snapshot of the principal applicant's personal, passport, contact, and travel data at the time of application. All fields are NOT NULL — this is a frozen record, not a live reference. One record per applicant per application.
 
 | Field | Description |
 |---|---|
+| fldID | Primary key |
 | fldApplicationID | FK → tblVisaApplicationSubmitted |
-| fldUserKey | FK → tblSecUserMap |
-| fldIsMinor | Computed — based on DOB vs AdultAge setting |
-| fldPassportExpired | Computed — live check against today |
-| fldPassportExpiringSoon | Computed — within 6-month buffer |
-| fldPassportBase64Converted | Computed — full data URI |
-| fldFullPhoneNumber | Computed — concatenated dial code + number |
+| fldUserId | FK → tblPersonalProfileDetails.fldID — the applicant |
+| fldFirstName | Snapshot at application time |
+| fldMiddleName | (nullable) |
+| fldSurname | Snapshot |
+| fldDOB | Snapshot — check: < today |
 | fldGenderID | FK → tblGenders |
 | fldNationalityID | FK → tblNationalities |
+| fldCountryOfBirth | Free text varchar(100) |
+| fldPlaceOfBirth | Free text varchar(200) |
 | fldMaritalStatusID | FK → tblMaritalStatuses |
+| fldIsMinor | Computed — 1 if age < 18 |
 | fldPassportTypeID | FK → tblPassportTypes |
+| fldPassportNumber | Snapshot |
+| fldPassportIssuingCountry | varchar(100) |
+| fldPassportIssuingLocation | varchar(200) |
+| fldPassportDateOfIssue | Snapshot — check: < fldPassportExpDate |
+| fldPassportExpDate | Snapshot |
+| fldPassportExpired | Computed — 1 if PassportExpDate < today |
+| fldPassportExpiringSoon | Computed — 1 if PassportExpDate < today + 6 months |
+| fldPassportBase64 | Snapshot passport image |
+| fldPassportFileExt | File extension |
+| fldPassportBase64Converted | Computed PERSISTED — full data URI |
+| fldCurrentResidentialAdd | Address varchar(400) |
+| fldCityOfResidence | City varchar(200) |
 | fldCountryOfResidenceID | FK → tblNationalities |
 | fldImmigrationStatusID | FK → tblImmigrationStatuses |
+| fldCountryPhoneCode | Dial code — check: starts with '+' |
+| fldPhoneNumber | Phone number |
+| fldFullPhoneNumber | Computed PERSISTED — concatenated phone |
+| fldEmail | Email (nullable) |
 | fldPurposeOfVisitID | FK → tblPurposesOfVisit |
 | fldPointOfEntryID | FK → tblPointsOfEntry |
-| fldDateOfArrival | Planned arrival date |
-| fldDurationOfStayDays | Planned length of stay |
+| fldPhysicalAddressInUganda | Address in Uganda varchar(400) (nullable) |
+| fldPreviousTravelHistory | Travel history notes nvarchar(max) (nullable) |
+| fldDateOfArrival | Planned arrival date (nullable) |
+| fldDurationOfStayDays | Planned stay length in days (nullable, check: > 0) |
+| fldCreatedAt | Record creation timestamp |
+| fldUpdatedAt | Last updated timestamp |
 
-**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblSecUserMap`, and all personal data lookup tables
+**Unique constraint:** `(fldApplicationID, fldUserId)` — one record per person per application.
+
+**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblPersonalProfileDetails`, `tblGenders`, `tblNationalities` (×2), `tblMaritalStatuses`, `tblPassportTypes`, `tblImmigrationStatuses`, `tblPurposesOfVisit`, `tblPointsOfEntry`
 
 ---
 
-### tblApplicantDocuments
+### tblPrincipleDocuments
 
-**Purpose:** Documents uploaded by the principal applicant against their application. Tracks both typed documents (from `tblDocumentTypes`) and free-text other document types.
+**Purpose:** Documents uploaded by the principal applicant against their specific application.
 
 | Field | Description |
 |---|---|
+| fldID | Primary key |
 | fldApplicationID | FK → tblVisaApplicationSubmitted |
-| fldUserKey | FK → tblSecUserMap |
+| fldUserId | FK → tblSecUserMap.fldID |
 | fldDocumentTypeID | FK → tblDocumentTypes |
-| fldOtherDocTypeName | Free text when type = Other |
-| fldBase64Converted | Computed — full data URI |
-| fldIsIncludedInApp | Whether this doc is formally part of the submission |
+| fldOtherDocTypeName | Free text when type = Other (nullable) |
+| fldFileExt | File extension (.jpg, .jpeg, .png, .bmp, .pdf) |
+| fldBase64 | Raw base64 document content |
+| fldBase64Converted | Computed PERSISTED — full data URI |
+| fldIsIncludedInApp | Whether this doc is part of the formal submission (default 0) |
+| fldUploadedAt | Upload timestamp (default sysutcdatetime()) |
 
 **Relationships:** FK to `tblVisaApplicationSubmitted`, `tblSecUserMap`, `tblDocumentTypes`
 
@@ -696,146 +934,97 @@ Applicant-level data captured per person directly on the application.
 
 ---
 
-## Section 7 — Application Family & Group Member Tables
+## Section 7 — Workflow & Permit Tables
 
-When a principal includes family or group members on an application, their data is copied into these tables at that point in time. This ensures submitted applications are a permanent historical record — subsequent edits to pre-application data have no effect on submitted applications.
-
-**Key design principle:** Family member snapshots and group member snapshots are completely separate chains with no cross-reference between them. A family member on an application traces back to `tblFamilyMembers`. A group member on an application traces back to `tblGroupMembers`. Neither references the other.
-
-```
-FAMILY APPLICATION CHAIN              GROUP APPLICATION CHAIN
-──────────────────────────            ──────────────────────────────
-tblFamilyMembers                      tblGroupMembers
-  └── tblFamilyMemberDocuments          (self-contained — no FK to
-         ↓ traceability                  tblFamilyMembers)
-tblApplicationFamilyMembers              └── tblGroupDocuments
-  └── tblApplicationFamilyMemberDocuments       ↓ traceability
-                                        tblApplicationGroupMembers
-                                          └── tblApplicationGroupMemberDocuments
-```
+Tables supporting the permit application workflow system — separate from the core visa application flow.
 
 ---
 
-### tblApplicationGroups
+### tblApplicationWorkflowType
 
-**Purpose:** Records the group details on a specific application. Data is copied from `tblGroups` at application time. `fldGroupID` retains a nullable traceability link to the source group.
+**Purpose:** Master list of workflow types that a permit or application can be processed through.
 
 | Field | Description |
 |---|---|
-| fldApplicationID | FK → tblVisaApplicationSubmitted (UNIQUE — one group per application) |
-| fldGroupID | FK → tblGroups (nullable — traceability only) |
-| fldOwnerKey | FK → tblSecUserMap |
-| fldGroupName | Copied at application time |
-| fldGroupType | Copied at application time |
-| fldContactFirstName, fldContactSurname | Copied at application time |
-| fldContactFullPhone | Computed |
+| fldWorkflowTypeId | Primary key |
+| fldKey | Unique key identifier nvarchar(50) |
+| fldName | Display name nvarchar(100) |
+| fldDescription | Optional description nvarchar(300) (nullable) |
+| fldIsActive | Controls availability (default 1) |
 
-**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblGroups` (nullable), `tblSecUserMap`
+**Relationships:** Referenced by `tblApplicationWorkflowRequest` via `fldWorkflowTypeId` (soft reference — no enforced FK)
 
 ---
 
-### tblApplicationFamilyMembers
+### tblApplicationWorkflowRequest
 
-**Purpose:** Family members included on a specific application. All personal and passport data is stored directly in this table as it was when the member was added. `fldFamilyMemberID` provides a nullable traceability link back to the source `tblFamilyMembers` record.
+**Purpose:** Records workflow requests such as passport renewals, permit changes, or citizenship transfers. References applications by their string reference number (not an enforced int FK) to support cross-system requests.
 
 | Field | Description |
 |---|---|
-| fldApplicationID | FK → tblVisaApplicationSubmitted |
-| fldFamilyMemberID | FK → tblFamilyMembers (nullable — traceability) |
-| fldMemberUserKey | FK → tblSecUserMap |
-| fldMemberTypeID | FK → tblGroupMemberTypes |
-| fldIsMinor | Copied at inclusion time |
-| fldGuardianRelID | FK → tblGuardianRelationships |
-| Personal data fields | FirstName, Surname, DOB, Gender, Nationality, etc. — all stored as values |
-| Passport data fields | PassportType, PassportNumber, PassportExpDate, etc. — all stored as values |
-| fldPassportBase64Converted | Stored as already-converted data URI |
-| fldPaymentStatus | Per-member payment tracking |
-| fldStatus | Active, Removed, Left |
-| fldRemovalReasonID | FK → tblReasons |
+| fldWorkflowRequestId | Primary key |
+| fldWorkflowTypeId | int — references tblApplicationWorkflowType (soft, no FK enforced) |
+| fldOriginalApplicationId | nvarchar(50) — application reference string (not int FK) |
+| fldPreviousPassportNumber | Previous passport identifier nvarchar(50) |
+| fldDateOfBirth | Applicant date of birth — used for identity lookup |
+| fldNewPermitSubcategoryId | int (nullable) — target subcategory (soft, no FK enforced) |
+| fldRequestedOn | Request timestamp (default sysutcdatetime()) |
+| fldStatus | Processing status nvarchar(30) (default 'PENDING') |
+| fldNotes | Additional notes nvarchar(500) (nullable) |
 
-**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblFamilyMembers` (nullable), `tblSecUserMap`, `tblGroupMemberTypes`, `tblGuardianRelationships`, `tblReasons`
+> **No enforced FK constraints** on this table — all references are soft links. Draw relationship lines as dashed in the ERD.
 
 ---
 
-### tblApplicationGroupMembers
+---
 
-**Purpose:** Group members included on a specific application. All personal and passport data is stored directly as values at the time the member is added. `fldGroupMemberID` provides a nullable traceability link back to `tblGroupMembers`. There is **no FK to `tblFamilyMembers`** — group members are independent of the family management tables.
+## Section 8 — Operational & System Tables
 
-| Field | Description |
+These tables support system operations and logging. They are not part of the core business domain model and are not included in the main ERD.
+
+---
+
+### tblAuditLog
+
+**Purpose:** System-level audit trail — records data changes across the database. Populated by triggers.
+
+---
+
+### tblErrorLog
+
+**Purpose:** Application and database error logging — records exceptions and failures for diagnostics.
+
+---
+
+### tblApplicationID
+
+**Purpose:** Sequence or reference number generator for application identifiers.
+
+---
+
+### sysdiagrams
+
+SQL Server system table for SSMS diagram definitions — not part of the application schema.
+
+---
+
+### Future Module Reference Tables
+
+The following 30 lookup tables were added in a single batch (2026-05-26) as reference data for future immigration modules (permits, citizenship, biometrics, etc.). They have no FK connections to the current application tables and are not part of the current ERD scope.
+
+| Category | Tables |
 |---|---|
-| fldGroupID | FK → tblApplicationGroups |
-| fldApplicationID | FK → tblVisaApplicationSubmitted |
-| fldGroupMemberID | FK → tblGroupMembers (nullable — traceability only) |
-| fldMemberUserKey | FK → tblSecUserMap (nullable — member may have no portal account) |
-| fldMemberTypeID | FK → tblGroupMemberTypes |
-| fldIsMinor | Copied at inclusion time |
-| fldGuardianRelationship | Stored as plain text value (not FK) |
-| Personal data fields | FirstName, MiddleName, Surname, DOB, Gender, Nationality, etc. — all stored as values |
-| Passport data fields | PassportType, PassportNumber, PassportExpDate, etc. — all stored as values |
-| fldPassportBase64Converted | Stored as already-converted data URI |
-| fldPaymentStatus | Per-member payment tracking |
-| fldStatus | Active, Removed, Left |
-| fldRemovalReasonID | FK → tblReasons |
+| Physical description | tblEyeColors, tblHairColors, tblSkinColors |
+| Business / entity | tblBanks, tblCompanyTypes, tblNonProfitCompanyTypes, tblOperators |
+| Person classification | tblPersonTypes, tblCitizenshipTypes, tblProfessions, tblIndigenousCommunities |
+| Travel | tblModesOfTravel, tblTempTravelDocTypes, tblVisaIssuingAuthorities, tblVisaExemptReasons |
+| Financial | tblCurrencies, tblPaymentModes, tblMonthlyIncomeRanges |
+| Agriculture / resources | tblAgroProductTypes, tblSpecificMinerals, tblOtherMinerals |
+| Education | tblSchoolTypes, tblRareSkills |
+| Status / admin | tblStatusTypes, tblRemovalTypes, tblSourceAuthorities |
+| Biometrics | tblBiometricCaptureFailReasons |
 
-**Unique constraint:** `(fldApplicationID, fldPassportNumber)` — one entry per passport per application.
-
-**Relationships:** FK to `tblApplicationGroups`, `tblVisaApplicationSubmitted`, `tblGroupMembers` (nullable traceability), `tblSecUserMap` (nullable), `tblGroupMemberTypes`, `tblReasons`
-
-> **No FK to tblFamilyMembers or tblApplicationFamilyMembers.** Group members and family members are fully separate chains on both the pre-application and application layers.
-
----
-
-### tblApplicationFamilyMemberDocuments
-
-**Purpose:** Documents included on an application for a specific family member. Document content (base64, file type, name) is stored as values at time of inclusion. `fldFamilyMemberDocumentID` provides nullable traceability back to the source document.
-
-| Field | Description |
-|---|---|
-| fldApplicationID | FK → tblVisaApplicationSubmitted |
-| fldApplicationFamilyMemberID | FK → tblApplicationFamilyMembers |
-| fldFamilyMemberDocumentID | FK → tblFamilyMemberDocuments (nullable — traceability) |
-| fldDocumentTypeName | Stored as text value — not a FK |
-| fldBase64Converted | Stored as already-converted data URI |
-| fldUploadedAt | When included on the application |
-
-**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblApplicationFamilyMembers`, `tblFamilyMemberDocuments` (nullable)
-
----
-
-### tblApplicationGroupMemberDocuments
-
-**Purpose:** Documents included on an application for a specific group member. Document content is stored as values at time of inclusion. `fldGroupDocumentID` provides nullable traceability back to a shared group-level document in `tblGroupDocuments`. There is **no FK to `tblFamilyMemberDocuments`** — group member document traceability is entirely separate from family member document traceability.
-
-| Field | Description |
-|---|---|
-| fldApplicationID | FK → tblVisaApplicationSubmitted |
-| fldApplicationGroupMemberID | FK → tblApplicationGroupMembers |
-| fldGroupDocumentID | FK → tblGroupDocuments (nullable — traceability only) |
-| fldDocumentTypeName | Stored as text value — not a FK |
-| fldOtherDocTypeName | Free text when type = Other |
-| fldFileExt | File extension |
-| fldBase64Converted | Stored as already-converted data URI |
-| fldUploadedAt | When included on the application |
-
-**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblApplicationGroupMembers`, `tblGroupDocuments` (nullable)
-
-> **No FK to tblFamilyMemberDocuments.** Group document traceability traces back through `tblGroupDocuments` only.
-
----
-
----
-
-## Section 8 — Objects Requiring Verification
-
-The following objects exist in the database but their exact purpose or current design needs to be confirmed before including in the ERD.
-
-| Object | Type | Note |
-|---|---|---|
-| VisaApplication | Table | Missing `tbl` prefix — unclear if this is a table, view alias, or legacy object |
-| VisaApplicationStatus | Table | Missing `tbl` prefix — may be a status lookup or legacy object |
-| tblApplicationApplicants | Table | May be a duplicate or earlier version of tblApplicationFamilyMembers / tblApplicationGroupMembers |
-| tblVisaApplicationReference | Table | May store or sequence application reference numbers — possibly superseded by computed column on tblVisaApplicationSubmitted |
-| sysdiagrams | Table | SQL Server system table for SSMS diagram definitions — not part of application schema |
+These should be documented in a separate ERD sheet when their respective modules are built.
 
 ---
 
@@ -847,9 +1036,9 @@ The following objects exist in the database but their exact purpose or current d
 
 | Procedure | Purpose |
 |---|---|
-| proc_Records_PassportDocument | Upserts passport image record in tblVisaApplicationPassport |
-| sp_RecordVisaApplicationPassportDetails | Upserts passport personal details in tblVisaApplicationPassportDetails + creates tblSecUserMap entry on first call |
-| sp_RecordVisaApplicationNewPrincipalInfo | Upserts principal contact/residence info in tblVisaApplicationNewPrincipalInfo |
+| proc_Records_PassportDocument | Upserts passport image record |
+| sp_RecordVisaApplicationPassportDetails | Upserts passport personal details + creates tblSecUserMap entry on first call |
+| sp_RecordVisaApplicationNewPrincipalInfo | Upserts principal contact/residence info |
 | sp_GetUserPassportImageDetails | Returns passport image base64 for a user by token |
 | sp_GetApplicantProfilePic | Returns profile photo base64 by ApplicationID |
 | sp_GetApplicantReturnTicketImage | Returns return flight ticket base64 by ApplicationID |
@@ -858,11 +1047,10 @@ The following objects exist in the database but their exact purpose or current d
 
 | Procedure | Purpose |
 |---|---|
-| sp_RecordNewVisaApplication | ⚠️ Needs verification — may be earlier version of sp_RecordVisaApplication |
 | sp_RecordVisaApplication | Upserts master application record in tblVisaApplicationSubmitted |
 | sp_CreateVisaApplicationReference | Creates the application reference number |
 | sp_RecordNewApplicantPersonData | Upserts applicant person data in tblApplicantPersonData |
-| sp_RecordApplicantDocument | Upserts applicant document in tblApplicantDocuments |
+| sp_RecordApplicantDocument | Upserts applicant document in tblPrincipleDocuments |
 
 ### Officer Processing
 
@@ -912,7 +1100,7 @@ The following objects exist in the database but their exact purpose or current d
 | vw_ApplicantFullDetails | Full resolved applicant details with all FK IDs replaced by display names |
 | vw_ApplicationQueue | ⚠️ Needs verification — likely officer processing queue view |
 | vw_VisaApplicationsOverview | ⚠️ Needs verification — likely dashboard summary counts |
-| vw_VisaApplicationsOverviewTest | ⚠️ Test/development version of overview — likely not production |
+| vw_VisaApplicationsOverviewTest | Test/development version of overview — likely not production |
 | vw_VisaApplicationsPending | ⚠️ May overlap with vw_PendingApplications — needs verification |
 | vw_VisaApplicationsSubmitted | Applications in Submitted status |
 | vw_VisaApplicationsSubmittedConsolidated | ⚠️ Consolidated version — needs verification |
@@ -927,29 +1115,66 @@ The following objects exist in the database but their exact purpose or current d
 
 ---
 
+---
+
 ## Changelog
 
-### v1.1 — May 2026
+### v2.0 — June 2026
 
-**Corrected: Family vs Group member design**
+Major corrections based on full DDL review of all tables in `Uganda_Visa_Applications`.
 
-`tblGroupMembers` previously held only a FK to `tblFamilyMembers` with no data of its own. This was incorrect. The correct design recognises that:
+**Database renamed:** `Uganda_Forms` → `Uganda_Visa_Applications`
 
-- **Family members** (spouse, child, dependant) have a personal relationship with the principal and are managed in `tblFamilyMembers`.
-- **Group members** (tour traveller, corporate delegate, sports team member) have no required family relationship with the principal. They are independent persons added directly to a group.
+**Architecture corrected — no application-layer snapshot tables:**
 
-**Tables changed:**
+The prior design described a two-layer architecture with snapshot copies of family/group member data at application time (`tblApplicationFamilyMembers`, `tblApplicationGroupMembers`, `tblApplicationGroups`, `tblApplicationFamilyMemberDocuments`, `tblApplicationGroupMemberDocuments`). These tables **do not exist**. The actual design uses the pre-application tables directly.
 
-| Table | Change |
+| Removed (did not exist) | Replaced by |
 |---|---|
-| `tblGroupMembers` | Rebuilt as self-contained table with full personal and passport data fields. FK to `tblFamilyMembers` removed entirely. |
-| `tblApplicationGroupMembers` | `fldFamilyMemberID` FK to `tblFamilyMembers` removed. Replaced with `fldGroupMemberID` FK to `tblGroupMembers` for traceability. Unique constraint changed from `(ApplicationID + UserKey)` to `(ApplicationID + PassportNumber)` since group members may not have portal accounts. |
-| `tblApplicationGroupMemberDocuments` | `fldFamilyMemberDocumentID` FK to `tblFamilyMemberDocuments` removed. Group document traceability now flows through `tblGroupDocuments` only. |
+| tblApplicationFamilyMembers | tblFamilyMembers (used directly) |
+| tblApplicationGroupMembers | tblGroupMembers (used directly) |
+| tblApplicationGroups | tblGroups (used directly) |
+| tblApplicationFamilyMemberDocuments | tblFamilyMemberDocuments (used directly) |
+| tblApplicationGroupMemberDocuments | tblGroupMemberDocuments (used directly) |
+| tblApplicantDocuments | tblPrincipleDocuments (renamed) |
 
-**Impact on ERD:** The two application chains (family and group) are now fully independent with no cross-references between them.
+**Central person hub introduced:**
+
+`tblPersonalProfileDetails` is the central person record. `tblFamilyMembers` and `tblGroupMembers` are now lean junction tables — all personal/passport data removed from those tables and lives in `tblPersonalProfileDetails`.
+
+| Removed from ERD (replaced by tblPersonalProfileDetails) |
+|---|
+| tblVisaApplicationPassport |
+| tblVisaApplicationPassportDetails |
+| tblVisaApplicationNewPrincipalInfo |
+
+**Tables corrected:**
+
+| Table | Correction |
+|---|---|
+| tblSecUserMap | Added fldUUID, fldPortalSecUserId, fldLastUpdatedAt. Documented three unique identifiers (fldID, fldUserKey, fldPortalSecUserId). |
+| tblPersonalProfileDetails | New table replacing registration tables. Added fldPassportIssuingCountry/Location/DateOfIssue, fldPrincipalInfoCaptured, fldProfileBase64/FileExt/Base64Converted. Bug noted in fldProfileBase64Converted computed expression. |
+| tblGuardian | New table — junction linking minor to guardian via tblPersonalProfileDetails (×2). |
+| tblFamilies | FK corrected: fldUserId → tblPersonalProfileDetails (was fldOwnerKey → tblSecUserMap). Added fldCreatedAt, fldUpdatedAt. |
+| tblFamilyMembers | Completely rewritten as lean junction. All personal/passport fields removed. fldRelationship is free text nvarchar(50), not FK to tblGuardianRelationships. Added removal detail fields. |
+| tblFamilyMemberDocuments | Added fldDocumentID, fldFileExt, fldBase64, fldUploadedAt. |
+| tblGroups | Added fldPersonId FK→tblPersonalProfileDetails, fldGroupTypeID FK→tblGroupTypes, fldDeactivationReasonID, fldDeactivationComment, fldIsActive, fldCreatedAt, fldUpdatedAt. |
+| tblGroupMembers | Completely rewritten as lean junction. All personal/passport fields removed. FK is fldUserId → tblPersonalProfileDetails. |
+| tblGroupDocuments | Added fldRepoId (Laserfiche entry ID), fldFileExt, fldBase64, fldUploadedBy FK→tblPersonalProfileDetails. |
+| tblGroupMemberDocuments | New table — per-member documents, FK to tblGroupMembers. |
+| tblGroupTypes | New lookup table — FK from tblGroups.fldGroupTypeID. |
+| tblVisaApplicationSubmitted | Changed fldUserId FK → tblSecUserMap.fldID (was fldUserKey GUID). Added fldFamilyGroupID FK → tblFamilies. Changed fldGroupID FK → tblGroups (was tblApplicationGroups). fldApplicationRef is plain varchar not computed. Added: fldPricePerPerson, fldCurrency, fldPaymentRef, fldPaidAt, fldDeferComment, fldDeferredAt, fldDeferDocumentsRequired, fldCancelComment, fldCancelledAt, fldCancelledBy, fldReferComment, fldReferredAt, fldReferredTo, fldCreatedAt, fldUpdatedAt. |
+| tblApplicantPersonData | FK corrected: fldUserId → tblPersonalProfileDetails (was tblSecUserMap). Added fldPassportIssuingCountry, fldPassportIssuingLocation, fldPassportDateOfIssue, fldPhysicalAddressInUganda, fldPreviousTravelHistory. Unique constraint (fldApplicationID, fldUserId). All fields NOT NULL. |
+| tblPrincipleDocuments | Renamed from tblApplicantDocuments. FK fldUserId → tblSecUserMap.fldID. Added fldFileExt, fldBase64, fldUploadedAt. fldBase64Converted is PERSISTED computed. |
+| tblVisaApplicationApprovalHistory | Added fldComments nvarchar(500). |
+| tblSupervisorNotifications | Added fldCreatedAt. |
+| tblReasons | Updated discriminator list — added: Rejection, Internship, Research, SpecialPass, Deprivation, NationalityLost, RejectCitizenship, ToSecondary, CancellationByUser. |
+| tblPermitDocumentRequirement | New table — enhanced document requirement junction for permit applications. |
+| tblApplicationWorkflowType | New table — workflow type lookup. |
+| tblApplicationWorkflowRequest | New table — workflow request log. All references are soft (no FK constraints). |
 
 ---
 
-*Last updated: May 2026 — v1.1 (corrected family/group member design)*
-*Database: Uganda_Forms*
+*Last updated: June 2026 — v2.0 (full DDL-verified corrections)*
+*Database: Uganda_Visa_Applications*
 *Classification: Confidential*

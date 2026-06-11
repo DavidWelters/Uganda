@@ -41,12 +41,17 @@ $(document).ready(function () {
   var token    = url.searchParams.get('token');
   var groupId = url.searchParams.get('groupId');
   var passportNumber = url.searchParams.get('passportNumber');
+  var baseUrl = 'https://lf.automatenow.co.za/Forms/ListGroupMembers';
+  var previousUrl = baseUrl + '?token=' + encodeURIComponent(token) + '&groupId=' + encodeURIComponent(groupId);
+
+
 
   if (token) {
     setTimeout(function () {
         $('.sessionToken input').val(token).change();
         $('.groupId input').val(groupId).change();
         $('.passportNumber input').val(passportNumber).change();
+        $('.groupListUrl input').val(previousUrl);
     }, 1000);
   }
   /**
@@ -148,3 +153,4 @@ $(document).on('click', 'button:contains("Return To List")', function () {
     window.location.href = 'https://lf.automatenow.co.za/Forms/GroupList'
         + '?token=' + encodeURIComponent(token || '')
 });
+

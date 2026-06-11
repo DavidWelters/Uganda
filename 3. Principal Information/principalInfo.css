@@ -1,0 +1,298 @@
+/* ============================================================
+   PRINCIPAL CLIENT — LASERFICHE FORMS
+   CSS v5 — minimal approach: hide only what needs hiding,
+   don't globally hide li.form-q at all
+   ============================================================ */
+
+/* ── HIDE SPECIFIC SECTIONS ONLY ── */
+/*#q64 { display: none !important; }
+#q80 { display: none !important; }
+#q71 { display: none !important; }
+#q66 { display: none !important; }*/
+
+/* ── HIDE THE ORIGINAL <ul> FIELD LIST ── */
+/*.cf-section-block > ul { display: none !important; }*/
+
+/* ── REMOVE DEFAULT SECTION BLOCK SPACING ── */
+.cf-section-block {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.cf-page {
+  padding: 8px 12px !important;
+}
+
+/* ── FORM BASE ── */
+.cf-form, #form1 {
+  font-family: 'Segoe UI', Arial, sans-serif !important;
+  font-size: 13px !important;
+  color: #1a1a1a !important;
+}
+
+.documents {
+	max-width:50%;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SECTION HEADINGS
+══════════════════════════════════════════════════════════ */
+.pc-section {
+  display: block !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: #1a1a1a !important;
+  border-bottom: 1.5px solid #1a1a1a !important;
+  padding-bottom: 3px !important;
+  margin: 14px 0 8px 0 !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   GRID ROWS
+══════════════════════════════════════════════════════════ */
+.pc-row {
+  display: grid !important;
+  gap: 6px 10px !important;
+  margin-bottom: 6px !important;
+  align-items: end !important;
+  padding: 0 !important;
+}
+.pc-row.cols-4 { grid-template-columns: repeat(4, 1fr) !important; }
+.pc-row.cols-3 { grid-template-columns: repeat(3, 1fr) !important; }
+.pc-row.cols-2 { grid-template-columns: repeat(2, 1fr) !important; }
+
+/* ══════════════════════════════════════════════════════════
+   DOCUMENTS ROW
+══════════════════════════════════════════════════════════ */
+.pc-docs-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr auto !important;
+  gap: 6px 10px !important;
+  align-items: end !important;
+  border: 1px solid #ccc !important;
+  border-radius: 2px !important;
+  padding: 8px 10px !important;
+  margin-bottom: 4px !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   UPLOAD ROW & PANELS
+══════════════════════════════════════════════════════════ */
+.pc-upload-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  margin-top: 10px !important;
+}
+
+.pc-upload-panel {
+  display: block !important;
+  border: 1px solid #ccc !important;
+  border-radius: 2px !important;
+  padding: 10px 12px !important;
+  background: #fafafa !important;
+}
+
+.pc-upload-panel-title {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  text-align: center !important;
+  margin-bottom: 8px !important;
+  color: #1a1a1a !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   ALL li INSIDE OUR LAYOUT — force visible
+   No global hide of li.form-q — JS handles showing/hiding
+══════════════════════════════════════════════════════════ */
+.pc-row > li,
+.pc-docs-row > li,
+.pc-upload-panel > li {
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+  list-style: none !important;
+}
+
+.pc-upload-panel > li {
+  display: block !important;
+}
+
+/* Span helpers */
+.pc-row > li.pc-span-2 { grid-column: span 2 !important; }
+.pc-row > li.pc-span-3 { grid-column: span 3 !important; }
+
+/* ══════════════════════════════════════════════════════════
+   LABELS
+══════════════════════════════════════════════════════════ */
+.pc-row > li .cf-label,
+.pc-docs-row > li .cf-label {
+  font-size: 11.5px !important;
+  font-weight: 400 !important;
+  color: #1a1a1a !important;
+  margin-bottom: 2px !important;
+  display: block !important;
+  float: none !important;
+  width: auto !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.pc-upload-panel > li .cf-label {
+  display: none !important;
+}
+
+.screen-reader-legend {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0,0,0,0) !important;
+  white-space: nowrap !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   CF-FIELD WRAPPER
+══════════════════════════════════════════════════════════ */
+.pc-row > li .cf-field,
+.pc-docs-row > li .cf-field,
+.pc-upload-panel > li .cf-field {
+  float: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   INPUTS & SELECTS
+══════════════════════════════════════════════════════════ */
+.pc-row > li input[type="text"],
+.pc-row > li input[type="email"],
+.pc-row > li select,
+.pc-docs-row > li input[type="text"],
+.pc-docs-row > li select {
+  display: block !important;
+  height: 26px !important;
+  min-height: unset !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  border: 1px solid #bbb !important;
+  border-radius: 6px !important;
+  padding: 0 8px !important;
+  font-size: 12.5px !important;
+  font-family: 'Segoe UI', Arial, sans-serif !important;
+  color: #1a1a1a !important;
+  background: #fff !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.pc-row > li select,
+.pc-docs-row > li select {
+  height: 28px !important;
+}
+
+.pc-row > li input:focus,
+.pc-row > li select:focus,
+.pc-docs-row > li input:focus,
+.pc-docs-row > li select:focus {
+  border-color: #555 !important;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.08) !important;
+}
+
+/* Email */
+#q41 input[type="email"] {
+  background: #efefef !important;
+}
+
+/* ── DATE FIELDS ── */
+.pc-row > li .cf-date-field-date {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+.pc-row > li .cf-date-field-date input {
+  flex: 1 !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+.pc-row > li .cf-date-field-date img.ui-datepicker-trigger {
+  width: 16px !important;
+  height: 16px !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── HIDE DROP ZONES ── */
+.file-drop-area {
+  display: none !important;
+}
+
+/* ── UPLOAD BUTTONS ── */
+.pc-upload-panel input[type="button"].shadow-fileuploader,
+.pc-docs-row input[type="button"].shadow-fileuploader {
+  display: block !important;
+  width: 100% !important;
+  height: 30px !important;
+  background: #e8e8e8 !important;
+  border: 1px solid #bbb !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-family: 'Segoe UI', Arial, sans-serif !important;
+  cursor: pointer !important;
+  color: #1a1a1a !important;
+  box-shadow: none !important;
+  margin-top: 4px !important;
+}
+.pc-upload-panel input[type="button"].shadow-fileuploader:hover,
+.pc-docs-row input[type="button"].shadow-fileuploader:hover {
+  background: #d8d8d8 !important;
+}
+
+/* ── PARSLEY ERRORS ── */
+.pc-row li .parsley-errors-list,
+.pc-docs-row li .parsley-errors-list {
+  display: block !important;
+  font-size: 10.5px !important;
+  margin: 2px 0 0 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  color: #c00 !important;
+}
+
+/* ── SUBMIT BUTTON — always visible ── */
+.btn-wrapper,
+.btn-wrapper input[type="submit"],
+input.action-btn.Submit {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: static !important;
+}
+
+.fileuploader
+{
+	display:none;
+}
+
+.uploadPassportBtn,
+.uploadReturnTicketBtn,
+.uploadPhotoBtn {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.uploadPassportBtn .cf-field,
+.uploadReturnTicketBtn .cf-field,
+.uploadPhotoBtn .cf-field {
+    float: none !important;
+    width: 100% !important;
+}

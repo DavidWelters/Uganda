@@ -319,6 +319,28 @@ $(document).on('click', '.addfamilybutton button, ' + F.addButton + ' button', f
 });
 
 // ════════════════════════════════════════════════════════════════════════════
+//  Save Page
+// ════════════════════════════════════════════════════════════════════════════
+
+function saveAndClose(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var $btn = $(e.target);
+    $btn.prop('disabled', true).text('Saving...');
+
+    var token = new URL(window.location.href).searchParams.get('token') || '';
+
+    $('.Submit').trigger('click');
+
+    waitForLookupComplete(function () {
+        window.location.href = 'https://lf.automatenow.co.za/Forms/GroupList'
+            + '?token=' + encodeURIComponent(token);
+    });
+    return false;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 //  DOCUMENT READY
 // ════════════════════════════════════════════════════════════════════════════
 
