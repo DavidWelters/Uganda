@@ -1,7 +1,7 @@
 # Uganda Unified Border Management — Database Reference
 
 **Database:** `Uganda_Visa_Applications`
-**Version:** 2.0 — June 2026
+**Version:** 2.1 — June 2026
 **Classification:** Confidential / In Commercial Confidence
 
 ---
@@ -16,11 +16,12 @@
 6. [Section 4 — Group Management Tables](#section-4--group-management-tables)
 7. [Section 5 — Application Master Tables](#section-5--application-master-tables)
 8. [Section 6 — Application Person Data](#section-6--application-person-data)
-9. [Section 7 — Workflow & Permit Tables](#section-7--workflow--permit-tables)
-10. [Section 8 — Operational & System Tables](#section-8--operational--system-tables)
-11. [Section 9 — Stored Procedures](#section-9--stored-procedures)
-12. [Section 10 — Views](#section-10--views)
-13. [Changelog](#changelog)
+9. [Section 7 — Officer Processing Tables](#section-7--officer-processing-tables)
+10. [Section 8 — Workflow & Permit Tables](#section-8--workflow--permit-tables)
+11. [Section 9 — Operational & System Tables](#section-9--operational--system-tables)
+12. [Section 10 — Stored Procedures](#section-10--stored-procedures)
+13. [Section 11 — Views](#section-11--views)
+14. [Changelog](#changelog)
 
 ---
 
@@ -45,7 +46,7 @@ Upload Documents per Applicant
       ↓
 Submit Application
       ↓
-Officer Processing Queue → Approve / Reject / Defer / Refer
+Officer Processing Queue → Checklist Review → Recommendation → Approval Decision
 ```
 
 ---
@@ -74,9 +75,15 @@ tblGroupMembers  tblFamilyMembers    (principal — direct via tblSecUserMap)
              ▼
   tblVisaApplicationSubmitted  ◄── also FK to tblSecUserMap (fldUserId)
              │
-             ▼
-  tblApplicantPersonData (snapshot of personal data + travel fields)
-  tblPrincipleDocuments  (principal applicant's documents per application)
+             ├── tblApplicantPersonData (snapshot of personal data + travel fields)
+             ├── tblPrincipleDocuments  (principal applicant's documents per application)
+             ├── tblApplicantBackgroundResponses  (background declaration answers)
+             ├── tblApplicationChecklistReview    (officer checklist results per section)
+             ├── tblApplicationOfficerComments    (officer notes per stage/section)
+             ├── tblApplicationRecommendation     (processing officer recommendation)
+             ├── tblApplicationOfficerDocuments   (documents uploaded by officers)
+             ├── tblApplicationApprovalDecision   (approving officer final decision)
+             └── tblApplicationAdditionalDocRequests (officer requests for extra docs)
 ```
 
 **Key design principles:**
@@ -84,17 +91,19 @@ tblGroupMembers  tblFamilyMembers    (principal — direct via tblSecUserMap)
 - There are **no application-layer snapshot copies** of family or group member data. The pre-application tables are used directly.
 - `tblApplicantPersonData` is the only snapshot table — it freezes the principal's personal and travel data at application time.
 - Family and group chains are **fully independent** — group members have no FK relationship to `tblFamilyMembers`.
+- All officer processing tables (checklist, comments, recommendation, decision) FK to both `tblVisaApplicationSubmitted` and `tblApplicantPersonData` — a `NULL` `fldApplicantPersonDataID` indicates an application-level record rather than applicant-specific.
 
 ### Table Inventory by Category
 
 | Category | Tables |
 |---|---|
-| Lookup / Reference | tblSettings, tblApplicationTypes, tblApplicationCategories, tblApplicationSubcategories, tblSubcategoryMandatoryDocuments, tblPermitDocumentRequirement, tblDocumentTypes, tblNationalities, tblPassportTypes, tblGenders, tblMaritalStatuses, tblGuardianRelationships, tblGroupMemberTypes, tblGroupTypes, tblPurposesOfVisit, tblPointsOfEntry, tblImmigrationStatuses, tblReasons, tblDepartments |
+| Lookup / Reference | tblSettings, tblApplicationTypes, tblApplicationCategories, tblApplicationSubcategories, tblSubcategoryMandatoryDocuments, tblPermitDocumentRequirement, tblDocumentTypes, tblNationalities, tblPassportTypes, tblGenders, tblMaritalStatuses, tblGuardianRelationships, tblGroupMemberTypes, tblGroupTypes, tblPurposesOfVisit, tblPointsOfEntry, tblImmigrationStatuses, tblReasons, tblDepartments, **tblBackgroundQuestions** |
 | Person & Identity | tblSecUserMap, tblPersonalProfileDetails, tblGuardian |
 | Family Management | tblFamilies, tblFamilyMembers, tblFamilyMemberDocuments |
 | Group Management | tblGroups, tblGroupMembers, tblGroupDocuments, tblGroupMemberDocuments |
 | Application Master | tblVisaApplicationSubmitted, tblVisaApplicationApprovalHistory, tblSupervisorNotifications |
 | Application Person Data | tblApplicantPersonData, tblPrincipleDocuments |
+| **Officer Processing** | **tblApplicantBackgroundResponses, tblApplicationChecklistReview, tblApplicationOfficerComments, tblApplicationRecommendation, tblApplicationOfficerDocuments, tblApplicationApprovalDecision, tblApplicationAdditionalDocRequests** |
 | Workflow & Permits | tblApplicationWorkflowType, tblApplicationWorkflowRequest |
 | Operational | tblAuditLog, tblErrorLog, tblApplicationID |
 | Future Modules | tblBanks, tblCompanyTypes, tblPersonTypes, tblCitizenshipTypes, tblBiometricCaptureFailReasons, tblEyeColors, tblHairColors, tblSkinColors, tblIndigenousCommunities, tblModesOfTravel, tblMonthlyIncomeRanges, tblNonProfitCompanyTypes, tblOperators, tblProfessions, tblRemovalTypes, tblSchoolTypes, tblSourceAuthorities, tblRareSkills, tblSpecificMinerals, tblOtherMinerals, tblAgroProductTypes, tblCurrencies, tblPaymentModes, tblVisaExemptReasons, tblVisaIssuingAuthorities, tblStatusTypes, tblTempTravelDocTypes |
@@ -248,7 +257,7 @@ These tables contain static configuration data. They populate dropdowns, drive v
 | fldIsActive | Controls visibility |
 | fldSortOrder | Display order |
 
-**Relationships:** Referenced by `tblSubcategoryMandatoryDocuments`, `tblPermitDocumentRequirement`, `tblFamilyMemberDocuments`, `tblGroupMemberDocuments`, `tblGroupDocuments`, `tblPrincipleDocuments`
+**Relationships:** Referenced by `tblSubcategoryMandatoryDocuments`, `tblPermitDocumentRequirement`, `tblFamilyMemberDocuments`, `tblGroupMemberDocuments`, `tblGroupDocuments`, `tblPrincipleDocuments`, `tblApplicationOfficerDocuments`, `tblApplicationAdditionalDocRequests`
 
 **Example values:** Passport, Bank Statement, Hotel Booking, Return Flight Ticket, Profile Photo, Yellow Fever Certificate
 
@@ -269,7 +278,7 @@ These tables contain static configuration data. They populate dropdowns, drive v
 | fldIsEAC | 1 = East African Community member |
 | fldIsActive | Controls visibility |
 
-**Relationships:** Referenced by `tblPersonalProfileDetails` (fldNationalityID, fldCountryOfResidenceID) and `tblApplicantPersonData` (fldNationalityID, fldCountryOfResidenceID)
+**Relationships:** Referenced by `tblPersonalProfileDetails` (fldNationalityID, fldCountryOfResidenceID) and `tblApplicantPersonData` (fldNationalityID, fldCountryOfResidenceID, fldOtherNationalityID)
 
 ---
 
@@ -438,6 +447,40 @@ These tables contain static configuration data. They populate dropdowns, drive v
 | fldCreatedAt | Creation timestamp |
 
 **Relationships:** Referenced by `tblVisaApplicationSubmitted` via `fldReferDepartmentID` and `tblVisaApplicationApprovalHistory` via `fldDepartmentID`
+
+---
+
+### tblBackgroundQuestions *(added 2026-06-11)*
+
+**Purpose:** Lookup table defining each background declaration question and its conditional sub-field requirements. The `fldHas*` flags drive which detail fields are required when `fldAnswer = 1` (Yes) in `tblApplicantBackgroundResponses`.
+
+| Field | Description |
+|---|---|
+| fldID | Primary key (IDENTITY) |
+| fldCode | Unique short code — used by stored procedures (e.g. `VISA_DENIED`) |
+| fldQuestionText | Full question text — nvarchar(300) |
+| fldHasCountry | 1 = Country sub-field required on Yes answer |
+| fldHasDate | 1 = Date sub-field required on Yes answer |
+| fldHasReason | 1 = Reason sub-field required on Yes answer |
+| fldHasDoctorName | 1 = Doctor name sub-field required on Yes answer |
+| fldHasDiagnosis | 1 = Diagnosis sub-field required on Yes answer |
+| fldSortOrder | Display order |
+| fldIsActive | 0 = question retired (excluded from views and SPs) |
+| fldCreatedAt | Creation timestamp |
+
+**Unique constraint:** `fldCode`
+
+**Seeded values:**
+
+| Code | Question | Country | Date | Reason | DoctorName | Diagnosis |
+|---|---|---|---|---|---|---|
+| VISA_DENIED | Have you been denied a visa before? | ✓ | ✓ | ✓ | — | — |
+| DEPORTED | Have you been deported before? | ✓ | ✓ | ✓ | — | — |
+| CONVICTED | Have you been convicted in any country? | ✓ | ✓ | ✓ | — | — |
+| CRIMINAL_PROCEEDINGS | Are there any criminal proceedings against you? | ✓ | — | ✓ | — | — |
+| MENTAL_ILLNESS | Are you suffering from any mental illness? | — | ✓ | — | ✓ | ✓ |
+
+**Relationships:** Referenced by `tblApplicantBackgroundResponses` via `fldQuestionID`; used by `vw_ApplicantBackgroundResponses`, `sp_SaveBackgroundResponse`, `sp_GetBackgroundResponse`
 
 ---
 
@@ -808,7 +851,7 @@ These tables allow the principal to create and manage named groups before starti
 - FK to `tblApplicationTypes`, `tblApplicationCategories`, `tblApplicationSubcategories`
 - FK to `tblReasons` (×3: defer, cancel, refer)
 - FK to `tblDepartments` via `fldReferDepartmentID`
-- Referenced by `tblApplicantPersonData`, `tblPrincipleDocuments`, `tblVisaApplicationApprovalHistory`, `tblSupervisorNotifications`
+- Referenced by `tblApplicantPersonData`, `tblPrincipleDocuments`, `tblVisaApplicationApprovalHistory`, `tblSupervisorNotifications`, `tblApplicantBackgroundResponses`, `tblApplicationChecklistReview`, `tblApplicationOfficerComments`, `tblApplicationRecommendation`, `tblApplicationOfficerDocuments`, `tblApplicationApprovalDecision`, `tblApplicationAdditionalDocRequests`
 
 ---
 
@@ -888,6 +931,8 @@ Person data captured specifically for an application — linked to both the pers
 | fldPassportBase64 | Snapshot passport image |
 | fldPassportFileExt | File extension |
 | fldPassportBase64Converted | Computed PERSISTED — full data URI |
+| **fldDualNationality** | **BIT (nullable) — whether applicant holds dual nationality** *(added 2026-06-11)* |
+| **fldOtherNationalityID** | **FK → tblNationalities (nullable) — second nationality when dual** *(added 2026-06-11)* |
 | fldCurrentResidentialAdd | Address varchar(400) |
 | fldCityOfResidence | City varchar(200) |
 | fldCountryOfResidenceID | FK → tblNationalities |
@@ -907,7 +952,12 @@ Person data captured specifically for an application — linked to both the pers
 
 **Unique constraint:** `(fldApplicationID, fldUserId)` — one record per person per application.
 
-**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblPersonalProfileDetails`, `tblGenders`, `tblNationalities` (×2), `tblMaritalStatuses`, `tblPassportTypes`, `tblImmigrationStatuses`, `tblPurposesOfVisit`, `tblPointsOfEntry`
+**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblPersonalProfileDetails`, `tblGenders`, `tblNationalities` (×3 — nationality, country of residence, other nationality), `tblMaritalStatuses`, `tblPassportTypes`, `tblImmigrationStatuses`, `tblPurposesOfVisit`, `tblPointsOfEntry`
+
+**Business rules for dual nationality (enforced in `sp_RecordNewApplicantPersonData`):**
+- `fldOtherNationalityID` is required when `fldDualNationality = 1`
+- `fldOtherNationalityID` must differ from `fldNationalityID`
+- Both nationalities must exist and be active in `tblNationalities`
 
 ---
 
@@ -934,7 +984,202 @@ Person data captured specifically for an application — linked to both the pers
 
 ---
 
-## Section 7 — Workflow & Permit Tables
+## Section 7 — Officer Processing Tables
+
+These tables record officer actions during the Processing and Approval queue stages. All tables FK to `tblVisaApplicationSubmitted`. Most also FK to `tblApplicantPersonData` — a `NULL` `fldApplicantPersonDataID` means the record applies at the application level rather than to a specific applicant.
+
+> **CheckGroup values** (used across checklist, comments, and recommendation tables): `Personal`, `Passport`, `Travel`, `Contact`, `Background`, `MandatoryDocuments`, `PassportPhoto`, `ReturnTicket`, `AdditionalDocuments`
+>
+> **QueueStage values:** `Processing`, `Approving`
+
+---
+
+### tblApplicantBackgroundResponses *(added 2026-06-11)*
+
+**Purpose:** Stores one row per background question per applicant per application. Sub-fields (`fldCountry`, `fldDate`, `fldReason`, `fldDoctorName`, `fldDiagnosis`) are populated only when `fldAnswer = 1` (Yes); they are explicitly NULLed when the answer is No.
+
+| Field | Description |
+|---|---|
+| fldID | Primary key (IDENTITY) |
+| fldApplicationID | FK → tblVisaApplicationSubmitted |
+| fldApplicantPersonDataID | FK → tblApplicantPersonData |
+| fldQuestionID | FK → tblBackgroundQuestions |
+| fldAnswer | BIT — 1 = Yes, 0 = No |
+| fldCountry | nvarchar(100) — required when HasCountry = 1 and Answer = Yes |
+| fldDate | DATE — required when HasDate = 1 and Answer = Yes |
+| fldReason | nvarchar(500) — required when HasReason = 1 and Answer = Yes |
+| fldDoctorName | nvarchar(200) — required when HasDoctorName = 1 and Answer = Yes |
+| fldDiagnosis | nvarchar(500) — required when HasDiagnosis = 1 and Answer = Yes |
+| fldCreatedAt, fldUpdatedAt | Timestamps |
+
+**Unique constraint:** `(fldApplicationID, fldApplicantPersonDataID, fldQuestionID)` — one response per question per applicant per application.
+
+**Indexes:** `IX_AppBackgroundResp_ApplicationID`, `IX_AppBackgroundResp_ApplicantPersonDataID`
+
+**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblApplicantPersonData`, `tblBackgroundQuestions`
+
+---
+
+### tblApplicationChecklistReview *(added 2026-06-11)*
+
+**Purpose:** Stores the officer's Acceptable / Not Acceptable result for each checklist section per applicant per queue stage. Upserted on every save via `sp_SaveChecklistReview`.
+
+| Field | Description |
+|---|---|
+| fldID | Primary key (IDENTITY) |
+| fldApplicationID | FK → tblVisaApplicationSubmitted |
+| fldApplicantPersonDataID | FK → tblApplicantPersonData |
+| fldQueueStage | `Processing` or `Approving` |
+| fldCheckGroup | Checklist section — see allowed values above |
+| fldIsAcceptable | BIT (nullable) — NULL = not yet reviewed |
+| fldReviewedBy | Officer DisplayName (resolved from session token) |
+| fldReviewedAt | When last reviewed |
+| fldCreatedAt, fldUpdatedAt | Timestamps |
+
+**Unique constraint:** `(fldApplicationID, fldApplicantPersonDataID, fldQueueStage, fldCheckGroup)` — one result per section per applicant per stage.
+
+**Index:** `IX_AppChecklistReview_ApplicationID`
+
+**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblApplicantPersonData`
+
+---
+
+### tblApplicationOfficerComments *(added 2026-06-11)*
+
+**Purpose:** Append-only log of officer comments. Comments are never updated or deleted — each save inserts a new row. `NULL fldApplicantPersonDataID` = application-level comment; `NULL fldCheckGroup` = general comment not tied to a checklist section.
+
+| Field | Description |
+|---|---|
+| fldID | Primary key (IDENTITY) |
+| fldApplicationID | FK → tblVisaApplicationSubmitted |
+| fldApplicantPersonDataID | FK → tblApplicantPersonData (nullable) |
+| fldQueueStage | `Processing` or `Approving` |
+| fldCheckGroup | Checklist section (nullable) — see allowed values above |
+| fldComment | nvarchar(500) |
+| fldCommentBy | Officer DisplayName |
+| fldCommentAt | Timestamp (default SYSUTCDATETIME()) |
+
+**Index:** `IX_AppOfficerComments_ApplicationID`
+
+**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblApplicantPersonData` (nullable)
+
+> **Note:** `fldCheckGroup` column was also scripted as an ALTER TABLE addition for cases where `tblApplicationOfficerComments` existed from a prior session without this column.
+
+---
+
+### tblApplicationRecommendation *(added 2026-06-11)*
+
+**Purpose:** Processing officer's recommendation (`Approve` or `Reject`) per applicant per application. Upserted on every save — one row per applicant per application enforced by filtered unique indexes. Visa category/subcategory/duration fields populated on Approve.
+
+| Field | Description |
+|---|---|
+| fldID | Primary key (IDENTITY) |
+| fldApplicationID | FK → tblVisaApplicationSubmitted |
+| fldApplicantPersonDataID | FK → tblApplicantPersonData (nullable) |
+| fldRecommendation | `Approve` or `Reject` |
+| fldRecommendCategoryID | FK → tblApplicationCategories (nullable) |
+| fldRecommendSubcategoryID | FK → tblApplicationSubcategories (nullable) |
+| fldRecommendDuration | INT — visa duration value (nullable) |
+| fldRecommendDurationUnit | `Days` or `Months` (nullable) |
+| fldRecommendComment | nvarchar(500) (nullable) |
+| fldRecommendedBy | Officer DisplayName |
+| fldRecommendedAt | When recommendation was made |
+| fldCreatedAt, fldUpdatedAt | Timestamps |
+
+**Unique indexes:**
+- `UX_AppRecommendation_SingleApplicant` — `(fldApplicationID)` WHERE `fldApplicantPersonDataID IS NULL`
+- `UX_AppRecommendation_MultiApplicant` — `(fldApplicationID, fldApplicantPersonDataID)` WHERE `fldApplicantPersonDataID IS NOT NULL`
+
+**Index:** `IX_AppRecommendation_ApplicationID`
+
+**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblApplicantPersonData` (nullable), `tblApplicationCategories`, `tblApplicationSubcategories`
+
+---
+
+### tblApplicationOfficerDocuments *(added 2026-06-11)*
+
+**Purpose:** Documents uploaded by officers at the Recommendation, Approval, or Rejection stage. Supports soft delete — `fldIsDeleted = 1` marks a document as removed without destroying the record.
+
+| Field | Description |
+|---|---|
+| fldID | Primary key (IDENTITY) |
+| fldApplicationID | FK → tblVisaApplicationSubmitted |
+| fldDocumentStage | `Recommendation`, `Approval`, or `Rejection` |
+| fldDocumentTypeID | FK → tblDocumentTypes (nullable) |
+| fldOtherDocTypeName | nvarchar(100) — required when document type = Other (nullable) |
+| fldFileExt | File extension varchar(10) |
+| fldBase64 | Raw base64 content nvarchar(MAX) |
+| fldBase64Converted | Computed PERSISTED — `data:application/{fldFileExt};base64,{fldBase64}` |
+| fldUploadedBy | Officer DisplayName |
+| fldUploadedAt | Timestamp (default SYSUTCDATETIME()) |
+| fldIsDeleted | BIT — soft delete flag (default 0) |
+| fldDeletedBy | Officer DisplayName (nullable) |
+| fldDeletedAt | Timestamp (nullable) |
+
+**Index:** `IX_AppOfficerDocs_ApplicationID`
+
+**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblDocumentTypes` (nullable)
+
+> **Note:** `fldIsDeleted`, `fldDeletedBy`, and `fldDeletedAt` were also scripted as an ALTER TABLE addition (guarded with IF NOT EXISTS) for cases where this table was created prior to this session without those columns.
+
+---
+
+### tblApplicationApprovalDecision *(added 2026-06-11)*
+
+**Purpose:** Approving officer's final decision (`Approved` or `Rejected`) per applicant per application. Upserted on every save — one row per applicant per application enforced by filtered unique indexes.
+
+| Field | Description |
+|---|---|
+| fldID | Primary key (IDENTITY) |
+| fldApplicationID | FK → tblVisaApplicationSubmitted |
+| fldApplicantPersonDataID | FK → tblApplicantPersonData (nullable) |
+| fldDecision | `Approved` or `Rejected` |
+| fldApproveCategoryID | FK → tblApplicationCategories (nullable) |
+| fldApproveSubcategoryID | FK → tblApplicationSubcategories (nullable) |
+| fldApproveDuration | INT — approved visa duration value (nullable) |
+| fldApproveDurationUnit | `Days` or `Months` (nullable) |
+| fldApproveComment | nvarchar(500) (nullable) |
+| fldApprovedBy | Officer DisplayName |
+| fldApprovedAt | When decision was made |
+| fldCreatedAt, fldUpdatedAt | Timestamps |
+
+**Unique indexes:**
+- `UX_AppApprovalDecision_SingleApplicant` — `(fldApplicationID)` WHERE `fldApplicantPersonDataID IS NULL`
+- `UX_AppApprovalDecision_MultiApplicant` — `(fldApplicationID, fldApplicantPersonDataID)` WHERE `fldApplicantPersonDataID IS NOT NULL`
+
+**Index:** `IX_AppApprovalDecision_ApplicationID`
+
+**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblApplicantPersonData` (nullable), `tblApplicationCategories`, `tblApplicationSubcategories`
+
+---
+
+### tblApplicationAdditionalDocRequests *(added 2026-06-11)*
+
+**Purpose:** Tracks officer requests for additional documents from applicants. `fldIsDeleted = 1` when the officer cancels the request. `fldReceivedAt` is stamped when the applicant uploads the requested document.
+
+| Field | Description |
+|---|---|
+| fldID | Primary key (IDENTITY) |
+| fldApplicationID | FK → tblVisaApplicationSubmitted |
+| fldApplicantPersonDataID | FK → tblApplicantPersonData (nullable) |
+| fldDocumentTypeID | FK → tblDocumentTypes (nullable) |
+| fldOtherDocTypeName | nvarchar(100) (nullable) |
+| fldRequestComment | nvarchar(500) (nullable) |
+| fldRequestedBy | Officer DisplayName |
+| fldRequestedAt | Timestamp (default SYSUTCDATETIME()) |
+| fldReceivedAt | Timestamp (nullable) — stamped when document is received |
+| fldIsDeleted | BIT — 1 when request cancelled (default 0) |
+| fldCreatedAt | Timestamp |
+
+**Index:** `IX_AppAdditionalDocReq_ApplicationID`
+
+**Relationships:** FK to `tblVisaApplicationSubmitted`, `tblApplicantPersonData` (nullable), `tblDocumentTypes` (nullable)
+
+---
+
+---
+
+## Section 8 — Workflow & Permit Tables
 
 Tables supporting the permit application workflow system — separate from the core visa application flow.
 
@@ -978,7 +1223,7 @@ Tables supporting the permit application workflow system — separate from the c
 
 ---
 
-## Section 8 — Operational & System Tables
+## Section 9 — Operational & System Tables
 
 These tables support system operations and logging. They are not part of the core business domain model and are not included in the main ERD.
 
@@ -1030,7 +1275,7 @@ These should be documented in a separate ERD sheet when their respective modules
 
 ---
 
-## Section 9 — Stored Procedures
+## Section 10 — Stored Procedures
 
 ### Registration & Profile
 
@@ -1047,10 +1292,24 @@ These should be documented in a separate ERD sheet when their respective modules
 
 | Procedure | Purpose |
 |---|---|
-| sp_RecordVisaApplication | Upserts master application record in tblVisaApplicationSubmitted |
+| sp_RecordVisaApplication | Upserts master application record in tblVisaApplicationSubmitted. Resolves type/category/subcategory from names. Price/currency derived from subcategory. Re-saveable only while status = 'Awaiting Processing'. *(updated 2026-06-11)* |
 | sp_CreateVisaApplicationReference | Creates the application reference number |
-| sp_RecordNewApplicantPersonData | Upserts applicant person data in tblApplicantPersonData |
+| sp_RecordNewApplicantPersonData | Upserts applicant person data in tblApplicantPersonData. Now includes `@DualNationality` (BIT) and `@OtherNationality` (NVARCHAR) — validates that other nationality is required and differs from primary when dual = 1. *(updated 2026-06-11)* |
 | sp_RecordApplicantDocument | Upserts applicant document in tblPrincipleDocuments |
+
+### Background Declarations
+
+| Procedure | Purpose |
+|---|---|
+| sp_SaveBackgroundResponse | Upserts one background question response per applicant per application. Takes `@QuestionCode` — looks up question flags from `tblBackgroundQuestions` and validates required sub-fields. Clears sub-fields when answer = No. *(added 2026-06-11)* |
+| sp_GetBackgroundResponse | Returns one background question response for a specific applicant by `@ApplicationID`, `@ApplicantProfileID`, and `@QuestionCode`. Used by Laserfiche lookup rules. Answer returned as 'Yes' / 'No' / NULL. *(added 2026-06-11)* |
+
+### Family & Group Member Documents
+
+| Procedure | Purpose |
+|---|---|
+| sp_UpsertFamilyMemberDocument | Upload or hard-delete a document for a family member. Caller must be the family principal or the member themselves. `@Action` = 'Upload' or 'Delete'. *(added 2026-06-11)* |
+| sp_UpsertGroupMemberDocument | Upload or hard-delete a document for a group member. `@GroupID` pins the exact group. Caller must be the group principal or the member themselves. `@Action` = 'Upload' or 'Delete'. *(added 2026-06-11)* |
 
 ### Officer Processing
 
@@ -1062,6 +1321,12 @@ These should be documented in a separate ERD sheet when their respective modules
 | proc_VisaApplication_Defer | Defers application back to applicant — updates status, increments defer count |
 | proc_VisaApplication_DeferAndHold | Defer & Hold — preserves originating queue for correct routing on resubmit |
 | proc_VisaApplication_Refer | Refers application to another department or officer |
+| sp_SaveChecklistReview | Upserts one checklist section result (Acceptable/Not Acceptable) per applicant per queue stage per CheckGroup. Resolves officer name from session token. *(added 2026-06-11)* |
+| sp_SaveOfficerComment | Inserts an officer comment (append-only). `fldApplicantPersonDataID` and `fldCheckGroup` are both optional. *(added 2026-06-11)* |
+| sp_SaveRecommendation | Upserts processing officer recommendation (`Approve`/`Reject`) with optional category/subcategory/duration. *(added 2026-06-11)* |
+| sp_SaveOfficerDocument | Upload or soft-delete an officer document. `@Action` = 'Upload' or 'Delete'. `@DocumentStage` = 'Recommendation', 'Approval', or 'Rejection'. *(added 2026-06-11)* |
+| sp_SaveApprovalDecision | Upserts approving officer final decision (`Approved`/`Rejected`) with optional category/subcategory/duration. *(added 2026-06-11)* |
+| sp_SaveAdditionalDocRequest | Manages additional document requests. `@Action` = 'Request', 'Received', or 'Delete'. *(added 2026-06-11)* |
 
 ### Page / List Queries
 
@@ -1072,6 +1337,7 @@ These should be documented in a separate ERD sheet when their respective modules
 | proc_Page_DeferredVisaApplications | Returns applications in Defer status |
 | proc_Page_DeferredAndHoldVisaApplications | Returns applications in Defer & Hold status |
 | proc_Page_RecommendationsVisaApplications | ⚠️ Needs verification — possibly referral recommendations |
+| proc_Page_OfficialApplicationQueue | Officer queue grid. Updated to read from `vw_ApplicationQueueDetails`. Role detection via `Uganda_Portal.dbo.SecGroups`. *(updated 2026-06-11)* |
 
 ### Laserfiche Integration
 
@@ -1089,7 +1355,7 @@ These should be documented in a separate ERD sheet when their respective modules
 
 ---
 
-## Section 10 — Views
+## Section 11 — Views
 
 | View | Purpose |
 |---|---|
@@ -1098,7 +1364,10 @@ These should be documented in a separate ERD sheet when their respective modules
 | vw_VisaApplicationSummary | Summarised application view for lists and dashboards |
 | vw_PendingApplications | Filtered view of applications awaiting officer action |
 | vw_ApplicantFullDetails | Full resolved applicant details with all FK IDs replaced by display names |
-| vw_ApplicationQueue | ⚠️ Needs verification — likely officer processing queue view |
+| **vw_ApplicationQueueDetails** | **Full officer queue view. One row per application. Includes dual nationality columns, ApplicantCount (principal + family + group members), and latest assigned officer from tblVisaApplicationApprovalHistory. Used by proc_Page_OfficialApplicationQueue.** *(added 2026-06-11)* |
+| **vw_ApplicationQueueImages** | **Passport image (from tblApplicantPersonData snapshot) and profile photo (from live tblPersonalProfileDetails record) per application. Returns HasPassportImage and HasProfileImage BIT flags.** *(added 2026-06-11)* |
+| **vw_ApplicantBackgroundResponses** | **One row per question per applicant per application. CROSS JOINs all active tblBackgroundQuestions so all 5 questions appear even when unanswered. Returns IsAnswered and AllQuestionsAnswered flags.** *(added 2026-06-11)* |
+| vw_ApplicationQueue | ⚠️ Superseded by vw_ApplicationQueueDetails — verify if still in use |
 | vw_VisaApplicationsOverview | ⚠️ Needs verification — likely dashboard summary counts |
 | vw_VisaApplicationsOverviewTest | Test/development version of overview — likely not production |
 | vw_VisaApplicationsPending | ⚠️ May overlap with vw_PendingApplications — needs verification |
@@ -1118,6 +1387,27 @@ These should be documented in a separate ERD sheet when their respective modules
 ---
 
 ## Changelog
+
+### v2.1 — 2026-06-11
+
+**Schema changes (ALTER TABLE on existing tables):**
+- `tblApplicantPersonData` — added `fldDualNationality` (BIT NULL) and `fldOtherNationalityID` (INT NULL, FK → tblNationalities)
+- `tblApplicationOfficerDocuments` — added `fldIsDeleted`, `fldDeletedBy`, `fldDeletedAt` (IF NOT EXISTS guarded)
+- `tblApplicationOfficerComments` — added `fldCheckGroup` (VARCHAR 50 NULL) with CHECK constraint (IF NOT EXISTS guarded)
+
+**New tables (8):** `tblBackgroundQuestions`, `tblApplicantBackgroundResponses`, `tblApplicationChecklistReview`, `tblApplicationOfficerComments`, `tblApplicationRecommendation`, `tblApplicationOfficerDocuments`, `tblApplicationApprovalDecision`, `tblApplicationAdditionalDocRequests`
+
+**Seed data:** 5 background questions inserted into `tblBackgroundQuestions`
+
+**New views (3):** `vw_ApplicationQueueDetails`, `vw_ApplicationQueueImages`, `vw_ApplicantBackgroundResponses`
+
+**New stored procedures (10):** `sp_SaveChecklistReview`, `sp_SaveOfficerComment`, `sp_SaveRecommendation`, `sp_SaveOfficerDocument`, `sp_SaveApprovalDecision`, `sp_SaveAdditionalDocRequest`, `sp_UpsertFamilyMemberDocument`, `sp_UpsertGroupMemberDocument`, `sp_SaveBackgroundResponse`, `sp_GetBackgroundResponse`
+
+**Updated stored procedures (3):** `sp_RecordNewApplicantPersonData` (dual nationality), `sp_RecordVisaApplication` (current pattern), `proc_Page_OfficialApplicationQueue` (uses vw_ApplicationQueueDetails)
+
+**Document structure:** New Section 7 (Officer Processing Tables) inserted; Sections 7–10 renumbered to 8–11
+
+---
 
 ### v2.0 — June 2026
 
@@ -1175,6 +1465,6 @@ The prior design described a two-layer architecture with snapshot copies of fami
 
 ---
 
-*Last updated: June 2026 — v2.0 (full DDL-verified corrections)*
+*Last updated: 2026-06-11 — v2.1*
 *Database: Uganda_Visa_Applications*
 *Classification: Confidential*

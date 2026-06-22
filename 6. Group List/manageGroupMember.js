@@ -391,3 +391,21 @@ $(document).on('change', '.memberTypeLookup input', function () {
         $('.memberType input[value="' + memberTypeRadio + '"]').prop('checked', true).trigger('change');
     }, 1000);
 });
+
+$(document).on('change', '.GuardianRelationshipToMinorLookup input', function () {
+    let guardianRelationship = $(this).val().trim();
+    setTimeout(function () {
+        let select = $('.GuardianRelationshipToMinor select');
+        select.find('option').filter(function() {
+            return $(this).val().toLowerCase() === guardianRelationship.toLowerCase();
+        }).prop('selected', true);
+        select.trigger('change');
+    }, 1000);
+});
+
+$(document).on('change', '.GuardianCountryOfPhoneNumberLookup input', function () {
+    let guardianCountryOfPhoneNumber = $(this).val().trim();
+    setTimeout(function () {
+        $('.GuardianCountryOfPhoneNumber select').val(guardianCountryOfPhoneNumber).trigger('change');
+    }, 1000);
+});
