@@ -70,10 +70,13 @@ function makeRemoveButton() {
         color: "#bbb", boxShadow: "none",
         transition: "border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease"
     });
-    $btn.html(`<svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+    $btn.html(`<svg width="13" height="14" viewBox="0 0 14 16" fill="none"
                xmlns="http://www.w3.org/2000/svg">
-               <path d="M2 2l12 12M14 2L2 14"
-                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+               <path d="M1 4h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+               <path d="M5 4V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V4"
+                stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+               <path d="M10 4l-.5 9H4.5L4 4"
+                stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
                </svg>`);
     $btn.on("mouseenter", function () { if (!$(this).data("selected")) $(this).css({ borderColor: "#c0392b", color: "#c0392b" }); })
         .on("mouseleave", function () { if (!$(this).data("selected")) $(this).css({ borderColor: "#9e9e9e", color: "#bbb"    }); });
@@ -113,7 +116,7 @@ function editFamilyMember() {
 
             if (!personId) { alert('Person ID unknown.'); return; }
 
-            window.location.href = 'https://lf.automatenow.co.za/Forms/ManageFamily'
+            window.location.href = 'https://pinpoint.web.za/Forms/ManageFamily'
                 + '?token='    + encodeURIComponent(sessionToken)
                 + '&personId=' + encodeURIComponent(personId);
         });
@@ -155,6 +158,85 @@ function hideNativeControls() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+//  TABLE ROW STYLING — badges, merged name/DOB display, docs count
+// ════════════════════════════════════════════════════════════════════════════
+
+function styleTableRows() {
+    $('.familyMember tbody tr').each(function () {
+        let $row   = $(this);
+        let $cells = $row.find('td');
+
+        if ($cells.length < 6) return;
+
+        let firstName    = $cells.eq(COL.firstName)   .find('input:not([type="checkbox"])').val() || '';
+        let surname      = $cells.eq(COL.surname)     .find('input:not([type="checkbox"])').val() || '';
+        let dob          = $cells.eq(COL.dob)         .find('input:not([type="checkbox"])').val() || '';
+        let gender       = $cells.eq(COL.gender)      .find('input:not([type="checkbox"])').val() || '';
+        let relationship = $cells.eq(COL.relationship).find('input:not([type="checkbox"])').val() || '';
+        let docs         = $cells.eq(COL.docs)        .find('input:not([type="checkbox"])').val() || '0';
+
+        if (!firstName && !surname) return; // skip blank placeholder rows
+
+        // ── 1. Member cell: combined name + DOB ────────────────────────
+        /*let $firstCell = $cells.eq(COL.firstName);
+        $firstCell.find('.cf-field').hide();
+        if (!$firstCell.find('.member-display').length) {
+            $firstCell.append(
+                '<div class="member-display">' +
+                  '<div class="member-name"></div>' +
+                  '<div class="member-dob"></div>' +
+                '</div>'
+            );
+        }
+        $firstCell.find('.member-name').text((firstName + ' ' + surname).trim());
+        $firstCell.find('.member-dob').text(dob ? 'Date of birth: ' + dob : 'Date of birth: –');*/
+
+        // ── 2. Gender badge ─────────────────────────────────────────────
+        let $gCell    = $cells.eq(COL.gender);
+        $gCell.find('.cf-field').hide();
+        let gMap = { female: 'badge-female', male: 'badge-male' };
+        let gc   = gMap[gender.toLowerCase()] || 'badge-neutral';
+        if (!$gCell.find('.gender-badge').length) {
+            $gCell.append('<span class="badge-pill gender-badge"></span>');
+        }
+        $gCell.find('.gender-badge')
+            .attr('class', 'badge-pill gender-badge ' + gc)
+            .text(gender || '–');
+
+        // ── 3. Relationship badge ────────────────────────────────────────
+        let $rCell = $cells.eq(COL.relationship);
+        $rCell.find('.cf-field').hide();
+        let rMap = { spouse: 'badge-spouse', child: 'badge-child', parent: 'badge-parent', sibling: 'badge-sibling' };
+        let rc   = rMap[relationship.toLowerCase()] || 'badge-other';
+        if (!$rCell.find('.rel-badge').length) {
+            $rCell.append('<span class="badge-pill rel-badge"></span>');
+        }
+        $rCell.find('.rel-badge')
+            .attr('class', 'badge-pill rel-badge ' + rc)
+            .text(relationship || '–');
+
+        // ── 4. Docs count ────────────────────────────────────────────────
+        let $dCell = $cells.eq(COL.docs);
+        $dCell.find('.cf-field').hide();
+        if (!$dCell.find('.docs-count').length) {
+            $dCell.append('<span class="docs-count"></span>');
+        }
+        $dCell.find('.docs-count').text(docs);
+    });
+}
+
+function styleTableHeaders() {
+    let $th = $('.familyMember thead th');
+    if (!$th.length) return;
+    $th.eq(COL.firstName)   .text('Member');
+    $th.eq(COL.gender)      .text('Gender');
+    $th.eq(COL.relationship).text('Relationship');
+    $th.eq(COL.docs)        .text('Linked Docs');
+    $th.eq(6)               .text('');
+    $th.eq(7)               .text('Actions');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 //  MUTATION OBSERVER  ── re-inject buttons whenever LF re-renders rows
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -166,6 +248,8 @@ function scheduleReinject() {
         editFamilyMember();
         removeFamilyMember();
         hideNativeControls();
+        styleTableRows();
+        styleTableHeaders();
     }, 150);
 }
 
@@ -231,6 +315,8 @@ function addRowToFamilyTable(firstName, surname, dob, gender, personId) {
         editFamilyMember();
         removeFamilyMember();
         hideNativeControls();
+        styleTableRows();
+        styleTableHeaders();
 
         console.log('[familyList] Row added for personId=' + personId);
 
@@ -243,6 +329,25 @@ function addRowToFamilyTable(firstName, surname, dob, gender, personId) {
 
 //Triggers the submit function when the submit CSS button is clicked
 function triggerSubmit(){
+    //applicantUrl = 'https://pinpoint.web.za/Forms/SingleApplication?session=';  
+    let sessionToken = $('.session input').val() || '';
+    let type  = $('.type input').val() || '';
+    let category = $('.category input').val() || '';
+    let subcategory = $('.subcategory input').val() || '';
+    let purpose = $('.purpose input').val() || '';
+    let family = $('.family input').val() || '';
+    let group = $('.group input').val() || '';
+
+    let applicantUrl = 'https://pinpoint.web.za/Forms/NewVisaApplicationSingle'
+        + '?session='     + encodeURIComponent(sessionToken)
+        + '&type='        + encodeURIComponent(type)
+        + '&category='    + encodeURIComponent(category)      
+        + '&subcategory=' + encodeURIComponent(subcategory)
+        + '&purpose='     + encodeURIComponent(purpose)       
+        + '&family='      + encodeURIComponent(family || '')
+        + '&group='       + encodeURIComponent(group || '')
+
+    $('.applicantUrl input').val(applicantUrl).change();
     $('.Submit').trigger('click');    
 };
 
@@ -254,10 +359,27 @@ $(document).on('click', '.addfamilybutton button, ' + F.addButton + ' button', f
 
     if ($(this).attr('onclick')) return;
 
-    let passportNumber = $(F.passportNumber + ' input').val().trim();
-    let sessionToken   = $(F.sessionToken   + ' input').val().trim();
-    let passportTrue   = $(F.passportTrue   + ' input').val().trim();
-    let foundPersonId  = $(F.foundPersonId  + ' input').val().trim();
+    let sessionToken = $('.session input').val() || '';
+    let type  = $('.type input').val() || '';
+    let category = $('.category input').val() || '';
+    let subcategory = $('.subcategory input').val() || '';
+    let purpose = $('.purpose input').val() || '';
+    let family = $('.family input').val() || '';
+    let group = $('.group input').val() || '';
+    let passportNumber = ($('.passportNumber input').val() || '').trim();
+    let passportTrue   = ($('.passportTrue input').val() || '').trim();
+    let foundPersonId  = ($('.foundPersonId input').val() || '').trim();
+    console.log('Add Family Member clicked:', { sessionToken, type, category, subcategory, purpose, family, group, passportNumber, passportTrue, foundPersonId });
+
+    let addFamilyMemberUrl = 'https://pinpoint.web.za/Forms/AddManageFamily'
+        + '?session='     + encodeURIComponent(sessionToken)
+        + '&type='        + encodeURIComponent(type)
+        + '&category='    + encodeURIComponent(category)      
+        + '&subcategory=' + encodeURIComponent(subcategory)
+        + '&purpose='     + encodeURIComponent(purpose)       
+        + '&family='      + encodeURIComponent(family || '')
+        + '&group='       + encodeURIComponent(group || '')
+        + '&passport='    + encodeURIComponent(passportNumber || '');
 
     if (!passportNumber) {
         alert('Please enter a passport number first.');
@@ -270,33 +392,33 @@ $(document).on('click', '.addfamilybutton button, ' + F.addButton + ' button', f
         let checkCount = 0;
         let maxChecks  = 30;
 
-        $(F.addResult + ' input').val('').change();
-        $(F.foundPersonId + ' input').change();
+        $('.addResult input').val('').change();
+        $('.foundPersonId input').change();
 
         let poll = setInterval(function () {
             checkCount++;
-            let result = $(F.addResult + ' input').val().trim();
+            let result = $('.addResult input').val().trim();
 
             if (result === 'SUCCESS' || result === 'EXISTS') {
                 clearInterval(poll);
 
                 if (result === 'SUCCESS') {
-                    let firstName = $(F.foundFirstName + ' input').val().trim();
-                    let surname   = $(F.foundSurname   + ' input').val().trim();
-                    let dob       = $(F.foundDOB       + ' input').val().trim();
-                    let gender    = $(F.foundGender    + ' input').val().trim();
+                    let firstName = $('.foundFirstName input').val().trim();
+                    let surname   = $('.foundSurname   input').val().trim();
+                    let dob       = $('.foundDOB       input').val().trim();
+                    let gender    = $('.foundGender    input').val().trim();
 
                     addRowToFamilyTable(firstName, surname, dob, gender, foundPersonId);
                 }
 
-                $(F.passportNumber + ' input').val('').change();
-                $(F.passportTrue   + ' input').val('').change();
-                $(F.foundPersonId  + ' input').val('').change();
-                $(F.addResult      + ' input').val('').change();
-                $(F.foundFirstName + ' input').val('').change();
-                $(F.foundSurname   + ' input').val('').change();
-                $(F.foundDOB       + ' input').val('').change();
-                $(F.foundGender    + ' input').val('').change();
+                $('.passportNumber input').val('').change();
+                $('.passportTrue   input').val('').change();
+                $('.foundPersonId  input').val('').change();
+                $('.addResult      input').val('').change();
+                $('.foundFirstName input').val('').change();
+                $('.foundSurname   input').val('').change();
+                $('.foundDOB       input').val('').change();
+                $('.foundGender    input').val('').change();
 
                 if (result === 'EXISTS') {
                     alert('This person is already in your family list.');
@@ -313,50 +435,74 @@ $(document).on('click', '.addfamilybutton button, ' + F.addButton + ' button', f
     } else {
 
         // ── Person NOT in DB → navigate to AddManageFamily ────────────────
-        window.location.href = 'https://lf.automatenow.co.za/Forms/AddManageFamily'
-            + '?token=' + encodeURIComponent(sessionToken) + '&passport=' + encodeURIComponent(passportNumber);
+        window.location.href = addFamilyMemberUrl;
     }
 });
-
-// ════════════════════════════════════════════════════════════════════════════
-//  Save Page
-// ════════════════════════════════════════════════════════════════════════════
-
-function saveAndClose(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    var $btn = $(e.target);
-    $btn.prop('disabled', true).text('Saving...');
-
-    var token = new URL(window.location.href).searchParams.get('token') || '';
-
-    $('.Submit').trigger('click');
-
-    waitForLookupComplete(function () {
-        window.location.href = 'https://lf.automatenow.co.za/Forms/GroupList'
-            + '?token=' + encodeURIComponent(token);
-    });
-    return false;
-}
 
 // ════════════════════════════════════════════════════════════════════════════
 //  DOCUMENT READY
 // ════════════════════════════════════════════════════════════════════════════
 
-$(document).ready(function () {
-  $('.Submit').hide(); 
-    const url   = new URL(window.location.href);
-    const token = url.searchParams.get('token');
+$(document).ready(function(){
+    /* ── Passport Number injection ───────────────────────────────────────── */
+    var url    = new URL(window.location.href);
+    console.log('Current URL:', url.href);   
+    var sessionToken = url.searchParams.get('session');
+    var type  = url.searchParams.get('type');
+    var category = url.searchParams.get('category');
+    var subcategory = url.searchParams.get('subcategory');
+    var purpose = url.searchParams.get('purpose');
+    var family = url.searchParams.get('family');
+    var group = url.searchParams.get('group');
 
-    setTimeout(function () {
-        if (token) {
-            $(F.sessionToken + ' input').val(token).change();
-        }
-    }, 1000);
+    console.log('URL params:', { sessionToken, type, category, subcategory, purpose, family, group });
+
+    if (sessionToken) {
+        setTimeout(function () {
+            $('.session input').val(sessionToken).change();
+        }, 1000);
+    }
+       
+    if (type) {
+        setTimeout(function () {
+            $('.type input').val(type).change();
+        }, 1000);
+    }
+
+    if (category) {
+        setTimeout(function () {
+            $('.category input').val(category).change();
+        }, 1000);
+    }
+
+    if (subcategory) {
+        setTimeout(function () {
+            $('.subcategory input').val(subcategory).change();
+        }, 1000);
+    }
+    
+    if (purpose) {
+        setTimeout(function () {
+            $('.purpose input').val(purpose).change();
+        }, 1000);
+    }
+    
+    if (family) {
+        setTimeout(function () {
+            $('.family input').val(family).change();
+        }, 1000);
+    }
+    
+    if (group) {
+        setTimeout(function () {
+            $('.group input').val(group).change();
+        }, 1000);
+    }
 
     editFamilyMember();
     removeFamilyMember();
     hideNativeControls();
+    styleTableRows();
+    styleTableHeaders();
     observeFamilyTable();
 });

@@ -1,0 +1,149 @@
+<style>
+  #identity-card {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    color: #333;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px;
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    background: #f4f6f8;
+    border-radius: 10px;
+  }
+  #identity-card .ic-header {
+    min-width: 160px;
+    max-width: 180px;
+    flex-shrink: 0;
+  }
+  #identity-card .ic-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 4px 0;
+  }
+  #identity-card .ic-subtitle {
+    font-size: 13px;
+    color: #555;
+    margin: 0;
+    line-height: 1.5;
+  }
+  #identity-card .ic-body {
+    flex: 1;
+  }
+  #identity-card .ic-section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 14px 0;
+  }
+  #identity-card .ic-field {
+    margin-bottom: 14px;
+  }
+  #identity-card .ic-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  #identity-card .ic-row > div {
+    flex: 1;
+    min-width: 100px;
+  }
+  #identity-card .ic-field-bubble {
+    display: inline-block;
+  }
+  #identity-card .ic-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+    display: block;
+  }
+  #identity-card .ic-label {
+    font-size: 11px;
+    color: #888;
+    display: block;
+    margin-top: 2px;
+  }
+</style>
+<div id="identity-card">
+  <div class="ic-header">
+    <p class="ic-title">Identity &amp; contact</p>
+    <p class="ic-subtitle">Essential personal records and contact information</p>
+  </div>
+  <div class="ic-body">
+    <p class="ic-section-title">Biographic &amp; contact details</p>
+    <div class="ic-row">
+      <div>
+        <span class="ic-value" id="ic-marital">—</span>
+        <span class="ic-label">Marital status</span>
+      </div>
+      <div>
+        <span class="ic-value" id="ic-dual">—</span>
+        <span class="ic-label">Dual nationality</span>
+      </div>
+      <div>
+        <span class="ic-value" id="ic-pob">—</span>
+        <span class="ic-label">Place of birth</span>
+      </div>
+      <div>
+        <span class="ic-value" id="ic-immig">—</span>
+        <span class="ic-label">Immigration status in country of residence</span>
+      </div>
+    </div>
+    <div class="ic-row">
+      <div>
+        <span class="ic-value" id="ic-address">—</span>
+        <span class="ic-label">Current residential address</span>
+      </div>
+      <div>
+        <span class="ic-value" id="ic-city">—</span>
+        <span class="ic-label">City of residence</span>
+      </div>
+      <div>
+        <span class="ic-value" id="ic-country">—</span>
+        <span class="ic-label">Country of residence</span>
+      </div>
+    </div>
+    <div class="ic-field">
+      <div class="ic-field-bubble">
+        <span class="ic-value" id="ic-phone">—</span>
+        <span class="ic-label">Phone number</span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  function getVal(id) {
+    var el = document.getElementById(id);
+    if (!el) return "—";
+    var input = el.querySelector("input, select, textarea");
+    return (input && input.value.trim()) ? input.value.trim() : "—";
+  }
+  function updateIdentityCard() {
+    document.getElementById("ic-marital").textContent  = getVal("q47");
+    document.getElementById("ic-dual").textContent     = getVal("q46");
+    document.getElementById("ic-pob").textContent      = getVal("q49");
+    document.getElementById("ic-immig").textContent    = getVal("q48");
+    document.getElementById("ic-address").textContent  = getVal("q50");
+    document.getElementById("ic-city").textContent     = getVal("q51");
+    document.getElementById("ic-country").textContent  = getVal("q52");
+    document.getElementById("ic-phone").textContent    = getVal("q53");
+  }
+  function initIdentityCard() {
+    updateIdentityCard();
+    ["q47","q46","q49","q48","q50","q51","q52","q53"].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("change", updateIdentityCard);
+        el.addEventListener("input", updateIdentityCard);
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initIdentityCard);
+  } else {
+    setTimeout(initIdentityCard, 500);
+  }
+</script>

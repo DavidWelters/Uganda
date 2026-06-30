@@ -1,0 +1,128 @@
+<style>
+  #travel-card {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    color: #333;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px;
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    background: #f4f6f8;
+    border-radius: 10px;
+  }
+  #travel-card .tc-header {
+    min-width: 160px;
+    max-width: 180px;
+    flex-shrink: 0;
+  }
+  #travel-card .tc-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 4px 0;
+  }
+  #travel-card .tc-subtitle {
+    font-size: 13px;
+    color: #555;
+    margin: 0;
+    line-height: 1.5;
+  }
+  #travel-card .tc-body {
+    flex: 1;
+  }
+  #travel-card .tc-field {
+    margin-bottom: 14px;
+  }
+  #travel-card .tc-row {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  #travel-card .tc-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+    display: block;
+  }
+  #travel-card .tc-label {
+    font-size: 11px;
+    color: #888;
+    display: block;
+    margin-top: 2px;
+  }
+</style>
+<div id="travel-card">
+  <div class="tc-header">
+    <p class="tc-title">Travel &amp; stay</p>
+    <p class="tc-subtitle">Overview of applicants logistics and accompanying dependents</p>
+  </div>
+  <div class="tc-body">
+    <div class="tc-row">
+      <div>
+        <span class="tc-value" id="tc-address">—</span>
+        <span class="tc-label">Address in Uganda</span>
+      </div>
+      <div>
+        <span class="tc-value" id="tc-history">—</span>
+        <span class="tc-label">Travel History</span>
+      </div>
+      <div>
+        <span class="tc-value" id="tc-entry">—</span>
+        <span class="tc-label">Point of entry</span>
+      </div>
+    </div>
+    <div class="tc-row">
+      <div>
+        <span class="tc-value" id="tc-purpose">—</span>
+        <span class="tc-label">Purpose of visit</span>
+      </div>
+      <div>
+        <span class="tc-value" id="tc-arrival">—</span>
+        <span class="tc-label">Date of arrival</span>
+      </div>
+      <div>
+        <span class="tc-value" id="tc-duration">—</span>
+        <span class="tc-label">Duration of stay</span>
+      </div>
+    </div>
+    <div class="tc-field">
+      <span class="tc-value" id="tc-children">—</span>
+      <span class="tc-label">Any children endorsed on your passport accompanying you</span>
+    </div>
+  </div>
+</div>
+<script>
+  function getVal(id) {
+    var el = document.getElementById(id);
+    if (!el) return "—";
+    var input = el.querySelector("input, select, textarea");
+    return (input && input.value.trim()) ? input.value.trim() : "—";
+  }
+  function updateTravelCard() {
+    document.getElementById("tc-address").textContent  = getVal("q67");
+    document.getElementById("tc-history").textContent  = getVal("q68");
+    document.getElementById("tc-entry").textContent    = getVal("q69");
+    document.getElementById("tc-purpose").textContent  = getVal("q70");
+    document.getElementById("tc-arrival").textContent  = getVal("q73");
+    document.getElementById("tc-duration").textContent = getVal("q71");
+    document.getElementById("tc-children").textContent = getVal("q72");
+  }
+  function initTravelCard() {
+    updateTravelCard();
+    ["q67","q68","q69","q70","q73","q71","q72"].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("change", updateTravelCard);
+        el.addEventListener("input", updateTravelCard);
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTravelCard);
+  } else {
+    setTimeout(initTravelCard, 500);
+  }
+</script>

@@ -1,0 +1,348 @@
+<div class="passport-main-container">
+
+    <div class="passport-form-side">
+        <h1 class="passport-form-title-main">Upload your passport document</h1>
+        <p class="passport-form-subtitle-main">Upload a good quality image of your passport</p>
+
+        <div class="passport-upload-wrap">
+            <form method="post" id="aspForm_13">
+                <script>
+                    document.getElementById('aspForm_13').action =
+                        window.location.pathname + '?handler=ASPForm&' + window.location.search.substring(1);
+                </script>
+
+                <input class="form-control" type="hidden" name="ASPFormId" value="13" />
+                <input class="form-control" type="hidden" name="UserToken" id="hdn_UserToken" value="$(Token)" />
+                <input class="form-control" type="hidden" name="Base64" id="hdn_Base64" value="" />
+                <input class="form-control" type="hidden" name="FileExt" id="hdn_FileExt" value="" />
+
+                <!--
+          Status beacon — read by the submit block (block 2).
+          data-status: "none" | "validating" | "valid" | "invalid"
+        -->
+                <span id="passportOcrStatus" data-status="none" style="display:none"></span>
+
+                <div class="upload-card" id="uploadDropZone">
+                    <span class="upload-icon">📎</span>
+                    <p class="upload-title">
+                        <label class="upload-btn" for="passportFileInput">Browse</label>
+                        or drag your document here
+                    </p>
+                    <p class="upload-sub">JPEG, JPG, PNG, BMP or PDF &nbsp;·&nbsp; Min 5 KB &nbsp;·&nbsp; Max 1 MB</p>
+                    <input type="file" id="passportFileInput"
+                        accept=".jpeg,.jpg,.png,.bmp,.pdf,image/jpeg,image/png,image/bmp,application/pdf" />
+                </div>
+
+                <div class="passport-blue-info">
+                    <div class="passport-blue-info-icon">i</div>
+                    <div class="passport-blue-info-content">
+                        <p class="passport-blue-info-formats">Supported formats: JPG, JPEG, PNG, BMP, PDF</p>
+                        <p class="passport-blue-info-size">File size: Min 5KB to max 1MB</p>
+                    </div>
+                </div>
+
+                <div class="file-preview" id="filePreview">
+                    <div class="file-thumb" id="fileThumb">📄</div>
+                    <div class="file-meta">
+                        <div class="file-name" id="fileName"></div>
+                        <div class="file-size" id="fileSize"></div>
+                    </div>
+                    <button type="button" class="remove-btn" id="removeFileBtn" title="Remove">✕</button>
+                </div>
+
+                <div class="upload-error" id="uploadError"></div>
+                <div class="upload-success" id="uploadSuccess"></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="passport-image-side">
+        <!-- ✓ CHANGED: Use project folder path instead of base64 data URI -->
+        <div class="passport-image-bg" style="background-image: url('/img/Logos/hero3.png');">
+        </div>
+        <div class="passport-image-overlay"></div>
+        <div class="passport-image-text">
+            <h2 class="passport-image-title-main">The Pearl of Africa <span>awaits</span></h2>
+            <p class="passport-image-subtext">Business or leisure, visiting the Pearl of Africa is now easier than ever
+            </p>
+        </div>
+        <div class="passport-carousel-dots">
+            <span class="dot"></span>
+            <span class="dot active"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .upload-success.validating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #fff8e1;
+        border-color: #f59e0b;
+        color: #92400e;
+    }
+
+    .upload-success.validating::before {
+        content: '';
+        flex-shrink: 0;
+        width: 13px;
+        height: 13px;
+        border: 2px solid #f59e0b;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: ocr-spin 0.65s linear infinite;
+    }
+
+    @keyframes ocr-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    #uploadDropZone.ocr-pending {
+        opacity: 0.55;
+        pointer-events: none;
+    }
+
+    #removeFileBtn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+</style>
+
+<script>
+    (function () {
+        console.log('[UploadWidget] Script initialising…');
+
+        const ALLOWED_EXTS = ['.jpeg', '.jpg', '.png', '.bmp', '.pdf'];
+        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/bmp', 'application/pdf'];
+        const MIN_BYTES = 5 * 1024;
+        const MAX_BYTES = 1 * 1024 * 1024;
+
+        const dropZone = document.getElementById('uploadDropZone');
+        const fileInput = document.getElementById('passportFileInput');
+        const preview = document.getElementById('filePreview');
+        const thumb = document.getElementById('fileThumb');
+        const nameEl = document.getElementById('fileName');
+        const sizeEl = document.getElementById('fileSize');
+        const removeBtn = document.getElementById('removeFileBtn');
+        const errorEl = document.getElementById('uploadError');
+        const successEl = document.getElementById('uploadSuccess');
+        const hdnBase64 = document.getElementById('hdn_Base64');
+        const hdnFileExt = document.getElementById('hdn_FileExt');
+        const hdnToken = document.getElementById('hdn_UserToken');
+        const ocrStatus = document.getElementById('passportOcrStatus'); // shared beacon
+
+        /* State */
+        let isValidating = false;
+        let isPassportValid = false;
+        let pendingExt = '';   // holds ext during API call
+
+        function setOcrStatus(status) {
+            ocrStatus.dataset.status = status;
+            console.log('[UploadWidget] ocrStatus →', status);
+        }
+
+        setOcrStatus('none');
+
+        /* ── Drag / drop ── */
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files[0]) processFile(fileInput.files[0]);
+        });
+        removeBtn.addEventListener('click', resetUpload);
+
+        /* ── processFile ── */
+        function processFile(file) {
+            hideMessages();
+            isPassportValid = false;
+            setOcrStatus('none');
+
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+
+            if (!ALLOWED_EXTS.includes(ext) && !ALLOWED_TYPES.includes(file.type)) {
+                return showError('Invalid file type. Allowed: JPEG, JPG, PNG, BMP, PDF.');
+            }
+            if (file.size < MIN_BYTES) return showError('File is too small (minimum 5 KB).');
+            if (file.size > MAX_BYTES) return showError('File is too large (maximum 1 MB).');
+
+            pendingExt = ext;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const dataUrl = e.target.result;
+                const base64Pure = dataUrl.split(',')[1];
+
+                console.log('[UploadWidget] FileReader loaded — length:', base64Pure.length);
+
+                // Keep hidden fields empty until validation passes
+                hdnBase64.value = '';
+                hdnFileExt.value = '';
+
+                showPreview(file, ext, dataUrl);
+                validatePassport(base64Pure);
+            };
+            reader.onerror = () => showError('Could not read file. Please try again.');
+            reader.readAsDataURL(file);
+        }
+
+        /* ── Passport OCR API ── */
+        function validatePassport(base64Data) {
+            isValidating = true;
+            isPassportValid = false;
+            setOcrStatus('validating');
+            showValidating('Validating passport…');
+            console.log('[UploadWidget] Calling OCR API…');
+
+            fetch('https://passportocr.pinpoint.web.za/Passport', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: base64Data }),
+                redirect: 'follow'
+            })
+                .then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(result => {
+                    isValidating = false;
+                    clearValidating();
+                    console.log('[UploadWidget] OCR response:', JSON.stringify(result, null, 2));
+
+                    /*
+                     * overallStatus is unreliable — the API returns "Not valid" even for
+                     * perfectly readable passports. Instead we check whether the OCR actually
+                     * extracted data: a recognised docType + populated fields array means the
+                     * document was read successfully regardless of overallStatus.
+                     *
+                     * Case 1 — truly unreadable: error set AND no docType AND no fields
+                     * Case 2 — SPECIMEN test document
+                     * Case 3 — everything else with data = accepted
+                     */
+
+                    const hasDocType = !!result.docType;
+                    const hasFields = Array.isArray(result.fields) && result.fields.length > 0;
+
+                    /* Case 1 — image could not be parsed at all */
+                    if (!hasDocType && !hasFields) {
+                        setOcrStatus('invalid');
+                        return showError('This image could not be read as a passport. Please upload a clear, unobstructed photo.');
+                    }
+
+                    /* Case 2 — SPECIMEN / sample document */
+                    const isSpecimen = result.fields.some(
+                        f => f.fieldName === 'Document Status' && f.fieldValue === 'SPECIMEN'
+                    );
+                    if (isSpecimen) {
+                        setOcrStatus('invalid');
+                        return showError('This appears to be a sample/specimen passport. Please upload your actual passport.');
+                    }
+
+                    /* Case 2b — passport number must be present */
+                    const passportNumberField = result.fields.find(f => f.fieldName === 'Document Number');
+                    const passportNumber = passportNumberField ? passportNumberField.fieldValue.trim() : '';
+                    if (!passportNumber) {
+                        setOcrStatus('invalid');
+                        return showError('Could not extract a passport number. Please upload a clearer image of the passport data page.');
+                    } 
+
+                    /* Case 3 — document recognised and data extracted → accept */
+                    isPassportValid = true;
+                    hdnBase64.value = base64Data;
+                    hdnFileExt.value = pendingExt;
+                    setOcrStatus('valid');
+                    console.log('[UploadWidget] Passport accepted — docType:', result.docType,
+                        '| overallStatus:', result.overallStatus);
+                    showSuccess('Passport verified ✓');
+                })
+                .catch(err => {
+                    isValidating = false;
+                    isPassportValid = false;
+                    clearValidating();
+                    setOcrStatus('invalid');
+                    console.error('[UploadWidget] OCR API error:', err);
+                    showError('Passport validation failed. Please try again.');
+                });
+        }
+
+        /* ── UI helpers ── */
+        function showPreview(file, ext, dataUrl) {
+            nameEl.textContent = file.name;
+            sizeEl.textContent = formatBytes(file.size);
+            dropZone.classList.add('has-file');
+            preview.classList.add('show');
+            thumb.innerHTML = ['.jpeg', '.jpg', '.png', '.bmp'].includes(ext)
+                ? '<img src="' + dataUrl + '" alt="preview" />'
+                : '📄';
+        }
+
+        function resetUpload() {
+            fileInput.value = ''; hdnBase64.value = ''; hdnFileExt.value = '';
+            isValidating = false; isPassportValid = false; pendingExt = '';
+            setOcrStatus('none');
+            preview.classList.remove('show');
+            dropZone.classList.remove('has-file', 'ocr-pending');
+            thumb.innerHTML = '📄'; nameEl.textContent = ''; sizeEl.textContent = '';
+            removeBtn.disabled = false; fileInput.disabled = false;
+            hideMessages();
+        }
+
+        function showValidating(msg) {
+            hideMessages();
+            successEl.textContent = msg;
+            successEl.classList.add('show', 'validating');
+            dropZone.classList.add('ocr-pending');
+            removeBtn.disabled = true;
+            fileInput.disabled = true;
+        }
+        function clearValidating() {
+            successEl.classList.remove('validating');
+            dropZone.classList.remove('ocr-pending');
+            removeBtn.disabled = false;
+            fileInput.disabled = false;
+        }
+        function showError(msg) {
+            hideMessages();
+            errorEl.textContent = msg; errorEl.classList.add('show');
+            console.error('[UploadWidget]', msg);
+        }
+        function showSuccess(msg) {
+            hideMessages();
+            successEl.textContent = msg; successEl.classList.add('show');
+            console.log('[UploadWidget]', msg);
+        }
+        function hideMessages() {
+            errorEl.classList.remove('show');
+            successEl.classList.remove('show', 'validating');
+        }
+        function formatBytes(b) {
+            if (b < 1024) return b + ' B';
+            if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+            return (b / 1048576).toFixed(2) + ' MB';
+        }
+
+        /* ── Submit guard (fallback if block 2 is missing) ── */
+        document.getElementById('aspForm_13').addEventListener('submit', function (e) {
+            if (isValidating) {
+                e.preventDefault();
+                return showError('Please wait — validation in progress.');
+            }
+            if (!isPassportValid || !hdnBase64.value) {
+                e.preventDefault();
+                return showError('Please upload a valid passport before continuing.');
+            }
+        });
+
+        console.log('[UploadWidget] Ready ✓');
+    })();
+</script>

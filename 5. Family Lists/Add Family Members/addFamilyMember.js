@@ -1,21 +1,50 @@
 $(document).ready(function () {
   $('.Submit').hide(); 
-  $('#lookup1609').hide(); //add family memebr Lookup Autofill field
+  $('#lookup215').hide(); //add family memebr Lookup Autofill field
 
   /* ── Token injection ─────────────────────────────────────── */
   var url      = new URL(window.location.href);
-  var token    = url.searchParams.get('token');
   var passport = url.searchParams.get('passport');
 
-  if (token) {
+  var sessionToken = url.searchParams.get('session');
+  var type  = url.searchParams.get('type');
+  var category = url.searchParams.get('category');
+  var subcategory = url.searchParams.get('subcategory');
+  var purpose = url.searchParams.get('purpose');
+  var family = url.searchParams.get('family');
+  var group = url.searchParams.get('group');
+
+  console.log('Session Token:', sessionToken);
+  console.log('Type:', type);
+  console.log('Category:', category);
+  console.log('Subcategory:', subcategory);
+  console.log('Purpose:', purpose);
+  console.log('Family:', family);
+  console.log('Group:', group);
+  console.log('Passport:', passport);
+
+  if (sessionToken) {
     setTimeout(function () {
-      $('.sessionToken input').val(token).change();
+      $('.sessionToken input').val(sessionToken).change();
       if (passport) {
         $('.passport input').val(passport).change();
       }
     }, 1000);
   }
 
+  let addFamilyMemberUrl = 'https://pinpoint.web.za/Forms/FamilyMembers'
+        + '?session='     + encodeURIComponent(sessionToken)
+        + '&type='        + encodeURIComponent(type)
+        + '&category='    + encodeURIComponent(category)      
+        + '&subcategory=' + encodeURIComponent(subcategory)
+        + '&purpose='     + encodeURIComponent(purpose)       
+        + '&family='      + encodeURIComponent(family || '')
+        + '&group='       + encodeURIComponent(group || '');
+
+  //familyListUrl input field is used to store the URL for adding family members, which can be used in other parts of the application.
+  $('.familyListUrl input').val(addFamilyMemberUrl).change();
+
+    
   /* ── Relationship radio → field sync ────────────────────── */
   $(document).on('change', '.relationship input[type="radio"]', function () {
     $('.relationshipValue input').val($(this).val()).change();

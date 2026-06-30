@@ -1,0 +1,551 @@
+:root { --🥚: 'Jean Botha / Pinpoint'; }
+
+/* ── Tab Bar ─────────────────────────────────────────────── */
+#ug-tab-bar {
+  display: flex;
+  border-bottom: 2px solid #e2e6ea;
+  gap: 0;
+  background: transparent;
+  font-family: Arial, sans-serif;
+}
+
+.ug-tab-btn {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-family: Arial, sans-serif;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.ug-tab-btn:hover  { color: #00a796; border-bottom-color: #b2e5df; }
+.ug-tab-btn.active { color: #00a796; font-weight: 600; border-bottom-color: #00a796; }
+
+#ug-tab-btn-hidden { display: none; }
+
+/* ── Tab Panes ───────────────────────────────────────────── */
+.ug-tab-pane        { display: none; padding-top: 20px; }
+.ug-tab-pane.active { display: block; }
+
+/* ── Application details — stacked cards spacing ────────── */
+#ug-tab-appdetails > div { margin-bottom: 16px; }
+#ug-tab-appdetails > div:last-child { margin-bottom: 0; }
+
+/* ── Application Details Sub-nav ────────────────────────── */
+#ad-subnav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-family: Arial, sans-serif;
+}
+
+.ad-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-family: Arial, sans-serif;
+  border: 1px solid #e2e6ea;
+  border-radius: 20px;
+  background: transparent;
+  color: #6b7280;
+}
+
+.ad-status.acceptable     { color: #00a796; border-color: #00a796; background: #f0faf9; font-weight: 600; }
+.ad-status.not-acceptable { color: #e53e3e; border-color: #e53e3e; background: #fef2f2; font-weight: 600; }
+
+.ad-icon { font-size: 12px; font-weight: 700; flex-shrink: 0; }
+
+/* ── Application Details Progress Bar ───────────────────── */
+.ad-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e6ea;
+}
+
+.ad-progress-bar {
+  flex: 1;
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  gap: 2px;
+  background: #e2e6ea;
+}
+
+.ad-progress-seg {
+  flex: 1;
+  background: #d1d5db;
+  transition: background 0.2s;
+}
+.ad-progress-seg.acceptable     { background: #00a796; }
+.ad-progress-seg.not-acceptable { background: #e53e3e; }
+
+.ad-progress-count {
+  font-size: 12px;
+  color: #6b7280;
+  font-family: Arial, sans-serif;
+  white-space: nowrap;
+  min-width: 110px;
+  text-align: right;
+}
+
+/* ── Application Details — slider slot in card headers ──── */
+.ad-accept-slot {
+  display: block;
+  margin-top: 10px;
+}
+.ad-accept-slot .ug-accept-slider { margin-top: 0; }
+
+/* ── Application Details — card colour states ────────────── */
+#passport-card.ug-accept-red,
+#travel-card.ug-accept-red,
+#identity-card.ug-accept-red,
+#background-card.ug-accept-red   { background: #fbe2e6 !important; }
+
+#passport-card.ug-accept-green,
+#travel-card.ug-accept-green,
+#identity-card.ug-accept-green,
+#background-card.ug-accept-green { background: #e3f1da !important; }
+
+/* ── Check List Sub-nav ──────────────────────────────────── */
+#cl-subnav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e6ea;
+  font-family: Arial, sans-serif;
+}
+
+.cl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-family: Arial, sans-serif;
+  border: 1px solid #e2e6ea;
+  border-radius: 20px;
+  background: transparent;
+  color: #6b7280;
+}
+
+.cl-status.acceptable     { color: #00a796; border-color: #00a796; background: #f0faf9; font-weight: 600; }
+.cl-status.not-acceptable { color: #e53e3e; border-color: #e53e3e; background: #fef2f2; font-weight: 600; }
+
+.cl-icon {
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Acceptable / Null / Not Acceptable toggle (test: q20) ── */
+.ug-accept-slider {
+  display: inline-block;
+  vertical-align: middle;
+  margin-top: 4px;
+}
+
+.ug-accept-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 54px;
+  height: 26px;
+  border-radius: 999px;
+  background: #d9dce1;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.15s;
+}
+
+.ug-accept-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #4b5563;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ug-accept-range::-moz-range-track {
+  width: 54px;
+  height: 26px;
+  border-radius: 999px;
+  background: inherit;
+}
+
+.ug-accept-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #4b5563;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+  cursor: pointer;
+}
+
+.ug-accept-slider.ug-accept-red   .ug-accept-range { background: #f9c6ce; }
+.ug-accept-slider.ug-accept-red   .ug-accept-range::-webkit-slider-thumb,
+.ug-accept-slider.ug-accept-red   .ug-accept-range::-moz-range-thumb   { background: #e53935; }
+
+.ug-accept-slider.ug-accept-green .ug-accept-range { background: #bfe3a8; }
+.ug-accept-slider.ug-accept-green .ug-accept-range::-webkit-slider-thumb,
+.ug-accept-slider.ug-accept-green .ug-accept-range::-moz-range-thumb  { background: #2f7d32; }
+
+.ug-accept-slider.ug-accept-grey  .ug-accept-range { background: #d9dce1; }
+.ug-accept-slider.ug-accept-grey  .ug-accept-range::-webkit-slider-thumb,
+.ug-accept-slider.ug-accept-grey  .ug-accept-range::-moz-range-thumb  { background: #4b5563; }
+
+/* ── Check List section cards ──────────────────────────── */
+.cl-card {
+  background: #f4f6f8;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  transition: background 0.15s;
+}
+.cl-card:last-child { margin-bottom: 0; }
+
+.cl-card.ug-accept-grey  { background: #f4f6f8; }
+.cl-card.ug-accept-red   { background: #fbe2e6; }
+.cl-card.ug-accept-green { background: #e3f1da; }
+
+.cl-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cl-card-toggle-slot { flex-shrink: 0; }
+.cl-card-toggle-slot .ug-accept-slider { margin-top: 0; }
+
+.cl-card-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  font-family: Arial, sans-serif;
+}
+
+.cl-card-body > li {
+  display: block !important;
+  list-style: none !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.cl-card-body .cf-label { display: none !important; }
+
+.cl-card-body input[readonly] {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: transparent;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  color: #1a1a2e;
+  padding: 4px 0 8px;
+  outline: none;
+  cursor: default;
+}
+
+.cl-card-body textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 80px;
+  padding: 10px 12px;
+  border: 1px solid #e2e6ea;
+  border-radius: 8px;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  color: #1a1a2e;
+  background: #fff;
+  resize: vertical;
+}
+.cl-card-body textarea:focus { outline: none; border-color: #00a796; }
+
+/* ── Comments — one card per message row ─────────────────── */
+#ug-tab-comments > li {
+  display: block !important;
+  list-style: none !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.cm-card {
+  position: relative;
+  background: #f4f6f8;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.cm-card:last-child { margin-bottom: 0; }
+
+.cm-card hr.end_set { display: none !important; }
+
+.cm-display {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 12px;
+}
+
+.cm-col-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex-shrink: 0;
+  min-width: 120px;
+}
+
+.cm-col-right { flex: 1; }
+
+.cm-field { display: flex; flex-direction: column; }
+
+.cm-value {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a2e;
+  font-family: Arial, sans-serif;
+  white-space: pre-wrap;
+}
+
+.cm-label {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+  font-family: Arial, sans-serif;
+}
+
+.cm-card .cf-collection-delete {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  color: #9ca3af;
+  font-size: 16px;
+  text-decoration: none;
+}
+.cm-card .cf-collection-delete:hover { color: #e53e3e; }
+
+.cm-noted-btn {
+  margin-top: 10px;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: Arial, sans-serif;
+  cursor: pointer;
+  background: #e2e6ea;
+  color: #6b7280;
+  transition: background 0.15s, color 0.15s;
+}
+.cm-noted-btn.cm-noted-active { background: #e8821e; color: #fff; }
+
+/* ── Documents — Request Additional Documents + collection wrapper card ── */
+.add-doc-wrapper {
+  background: #f4f6f8;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+
+#q137 { background: transparent !important; }
+
+/* ── Documents — Additional Documents collection cards ────── */
+.add-doc-card {
+  background: transparent;
+  border-radius: 0;
+  padding: 8px 0;
+  margin: 0;
+  list-style: none !important;
+  border: none !important;
+  border-top: 1px solid #e2e6ea !important;
+  box-shadow: none !important;
+  display: block !important;
+}
+.add-doc-card:first-of-type { border-top: none !important; }
+
+.add-doc-card ul.rpx,
+.add-doc-card ul.rpx li {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin: 0 !important;
+}
+
+/* ── Documents — Orange Add buttons ─────────────────────── */
+.cf-collection-append[data-target="q95"],
+.cf-collection-append[data-target="q143"],
+.cf-collection-append[data-target="q84"] {
+  display: inline-block !important;
+  margin-top: 8px !important;
+  padding: 5px 14px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  font-family: Arial, sans-serif !important;
+  background: #e8821e !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transition: background 0.15s !important;
+}
+.cf-collection-append[data-target="q95"]:hover,
+.cf-collection-append[data-target="q143"]:hover,
+.cf-collection-append[data-target="q84"]:hover { background: #d0711a !important; }
+
+/* ── Documents — Comments section ──────────────────────────── */
+.doc-comment-section {
+  background: #f4f6f8;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.doc-comment-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  font-family: Arial, sans-serif;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.doc-comment-section textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 80px;
+  padding: 10px 12px;
+  border: 1px solid #e2e6ea;
+  border-radius: 8px;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  color: #1a1a2e;
+  background: #fff;
+  resize: vertical;
+}
+.doc-comment-section textarea:focus { outline: none; border-color: #00a796; }
+
+.doc-comment-stamp {
+  display: none;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #6b7280;
+  font-family: Arial, sans-serif;
+  font-style: italic;
+}
+
+/* ── Documents — one card per uploaded image ─────────────── */
+#ug-tab-documents > li {
+  display: block !important;
+  list-style: none !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.doc-card {
+  position: relative;
+  background: #f4f6f8;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.doc-card:last-child { margin-bottom: 0; }
+
+.doc-card .cf-collection-delete {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  color: #9ca3af;
+  font-size: 16px;
+  text-decoration: none;
+}
+.doc-card .cf-collection-delete:hover { color: #e53e3e; }
+
+.doc-display {
+  min-height: 48px;
+}
+
+.doc-image {
+  display: none;
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.doc-img-preview {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: contain;
+  cursor: zoom-in;
+  transition: opacity 0.15s;
+}
+.doc-img-preview:hover { opacity: 0.85; }
+
+.doc-placeholder {
+  display: block;
+  font-size: 13px;
+  color: #94a3b8;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 32px 0;
+}
+
+/* ── Hide native LF Forms submit button (replaced by action bar) ── */
+input.Submit[type="submit"] { display: none !important; }
+
+/* ── Lightbox ─────────────────────────────────────────────── */
+#ug-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  cursor: zoom-out;
+}
+
+#ug-lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  object-fit: contain;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  cursor: default;
+}
+
+#ug-lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  color: #fff;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.75;
+  user-select: none;
+}
+#ug-lightbox-close:hover { opacity: 1; }

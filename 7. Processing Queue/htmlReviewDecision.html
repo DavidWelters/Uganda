@@ -1,0 +1,72 @@
+<style>
+  #ug-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    font-family: Arial, sans-serif;
+  }
+
+  .ug-action-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: Arial, sans-serif;
+    cursor: pointer;
+    color: #fff;
+    transition: opacity 0.15s;
+  }
+  .ug-action-btn:hover { opacity: 0.85; }
+
+  .ug-action-rec     { background: #e8821e; }
+  .ug-action-save    { background: #fef3e2; color: #b07020; }
+</style>
+
+<div id="ug-action-bar">
+  <button type="button" class="ug-action-btn ug-action-rec" data-action="recommend">Recommend</button>
+  <button type="button" class="ug-action-btn ug-action-rec" data-action="defer">Defer</button>
+  <button type="button" class="ug-action-btn ug-action-rec" data-action="defer-hold">Defer &amp; hold</button>
+  <button type="button" class="ug-action-btn ug-action-save" data-action="save">Save</button>
+</div>
+
+<script>
+(function () {
+
+  function setFieldValue(id, val) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var input = el.querySelector('input, select, textarea');
+    if (!input) return;
+    input.value = val;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function handleAction(action, btn) {
+    switch (action) {
+      case 'defer':
+        setFieldValue('q18', 'Defer');
+        setFieldValue('q91', 'True');
+        break;
+      case 'defer-hold':
+        setFieldValue('q18', 'Defer & Hold');
+        setFieldValue('q90', 'True');
+        break;
+      case 'save':
+        $(btn).prop('disabled', true).text('Saving...');
+        $('.Submit').trigger('click');
+        break;
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.ug-action-btn');
+    if (!btn) return;
+    handleAction(btn.getAttribute('data-action'), btn);
+  });
+
+}());
+</script>

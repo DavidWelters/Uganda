@@ -1,0 +1,133 @@
+<style>
+  #background-card {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    color: #333;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px;
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    background: #f4f6f8;
+    border-radius: 10px;
+  }
+  #background-card .bc-header {
+    min-width: 160px;
+    max-width: 180px;
+    flex-shrink: 0;
+  }
+  #background-card .bc-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 4px 0;
+  }
+  #background-card .bc-subtitle {
+    font-size: 13px;
+    color: #555;
+    margin: 0;
+    line-height: 1.5;
+  }
+  #background-card .bc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+  }
+  #background-card .bc-field {
+    background: #f0f7f0;
+    border-left: 3px solid #1a6e2e;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px;
+  }
+  #background-card .bc-field.full {
+    grid-column: 1 / 2;
+  }
+  #background-card .bc-question {
+    font-size: 12px;
+    color: #333;
+    display: block;
+    margin-bottom: 4px;
+  }
+  #background-card .bc-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a6e2e;
+    display: block;
+  }
+  #background-card .bc-value.red {
+    color: #a32d2d;
+  }
+  #background-card .bc-field.red-bg {
+    background: #fdf0f0;
+    border-left-color: #a32d2d;
+  }
+</style>
+<div id="background-card">
+  <div class="bc-header">
+    <p class="bc-title">Applicant background</p>
+    <p class="bc-subtitle">List of questions about the applicant's background</p>
+  </div>
+  <div class="bc-grid">
+    <div class="bc-field" id="bc-field-denied">
+      <span class="bc-question">Have you been denied a Visa before?</span>
+      <span class="bc-value" id="bc-denied">No</span>
+    </div>
+    <div class="bc-field" id="bc-field-criminal">
+      <span class="bc-question">Are there any criminal proceedings against you?</span>
+      <span class="bc-value" id="bc-criminal">No</span>
+    </div>
+    <div class="bc-field" id="bc-field-deported">
+      <span class="bc-question">Have you been deported before?</span>
+      <span class="bc-value" id="bc-deported">No</span>
+    </div>
+    <div class="bc-field" id="bc-field-mental">
+      <span class="bc-question">Are you suffering from any mental illness?</span>
+      <span class="bc-value" id="bc-mental">No</span>
+    </div>
+    <div class="bc-field full" id="bc-field-convicted">
+      <span class="bc-question">Have you been convicted in any country?</span>
+      <span class="bc-value" id="bc-convicted">No</span>
+    </div>
+  </div>
+</div>
+<script>
+  function getVal(id) {
+    var el = document.getElementById(id);
+    if (!el) return "—";
+    var input = el.querySelector("input, select, textarea");
+    return (input && input.value.trim()) ? input.value.trim() : "—";
+  }
+  function applyColour(valueId, fieldId, val) {
+    var valEl   = document.getElementById(valueId);
+    var fieldEl = document.getElementById(fieldId);
+    if (!valEl || !fieldEl) return;
+    valEl.textContent = val;
+    var isNo = val.toLowerCase() === "no";
+    valEl.className   = "bc-value" + (isNo ? "" : " red");
+    fieldEl.className = fieldEl.className.replace(" red-bg", "") + (isNo ? "" : " red-bg");
+  }
+  function updateBackgroundCard() {
+    applyColour("bc-denied",    "bc-field-denied",    getVal("q45"));
+    applyColour("bc-criminal",  "bc-field-criminal",  getVal("q42"));
+    applyColour("bc-deported",  "bc-field-deported",  getVal("q43"));
+    applyColour("bc-mental",    "bc-field-mental",    getVal("q44"));
+    applyColour("bc-convicted", "bc-field-convicted", getVal("q41"));
+  }
+  function initBackgroundCard() {
+    updateBackgroundCard();
+    ["q45","q42","q43","q44","q41"].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("change", updateBackgroundCard);
+        el.addEventListener("input",  updateBackgroundCard);
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBackgroundCard);
+  } else {
+    setTimeout(initBackgroundCard, 500);
+  }
+</script>

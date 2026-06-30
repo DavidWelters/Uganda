@@ -1,132 +1,206 @@
 <!--
   ╔══════════════════════════════════════════════════════════╗
-  ║  VERIFY PASSPORT DATA — self-contained snippet           ║
+  ║  VERIFY PASSPORT DATA — restyled                         ║
   ║  Drop this block anywhere in your portal page.           ║
   ║  All CSS is scoped to #vpd-wrap — nothing leaks out.     ║
   ╚══════════════════════════════════════════════════════════╝
 -->
 
 <style>
+  /* ── Container ── */
   #vpd-wrap {
     background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    max-width: 860px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    max-width: 1060px;
     width: 100%;
-    position: relative;
-    box-shadow: 0 4px 24px rgba(0,0,0,.12);
+    margin: 0 auto;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
   }
+
+  /* ── Header ── */
   #vpd-wrap .vpd-header {
-    border-bottom: 1px solid #ddd;
-    padding: 14px 20px;
-    text-align: center;
-    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 26px;
+    border-bottom: 1px solid #ebebeb;
   }
   #vpd-wrap .vpd-title {
-    font-size: .9rem;
+    font-size: 1rem;
     font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
+    color: #111;
     margin: 0;
+    text-transform: none;
+    letter-spacing: 0;
   }
   #vpd-wrap .vpd-close {
-    position: absolute;
-    top: 10px;
-    right: 14px;
     background: none;
     border: none;
     font-size: 1.1rem;
-    line-height: 1;
-    color: #333;
+    color: #bbb;
     cursor: pointer;
     padding: 0;
+    line-height: 1;
   }
-  #vpd-wrap .vpd-close:hover { color: #000; }
-  #vpd-wrap .vpd-body { padding: 24px 28px 20px; }
+  #vpd-wrap .vpd-close:hover { color: #555; }
+
+  /* ── Body ── */
+  #vpd-wrap .vpd-body { padding: 22px 26px 28px; }
+
+  /* ── Logged-in badge ── */
   #vpd-wrap .vpd-loggedin {
-    background: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    padding: 5px 10px;
-    font-size: .78rem;
-    color: #666;
-    margin-bottom: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #edf7ed;
+    border: 1px solid #bdd9bd;
+    border-radius: 4px;
+    padding: 5px 14px 5px 8px;
+    font-size: .81rem;
+    color: #2a5e2a;
+    margin-bottom: 22px;
   }
-  #vpd-wrap .vpd-loggedin span { font-weight: 600; color: #333; }
+  #vpd-wrap .vpd-check-icon {
+    width: 18px;
+    height: 18px;
+    background: #4caf50;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: .62rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  #vpd-wrap .vpd-loggedin .vpd-name { font-weight: 600; color: #1f4e1f; }
+
+  /* ── Section headings ── */
+  #vpd-wrap .vpd-section-label {
+    font-size: .94rem;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 13px;
+    text-transform: none;
+    letter-spacing: 0;
+    padding: 0;
+    border: none;
+  }
+  #vpd-wrap .vpd-section-gap { margin-top: 24px; }
+
+  /* ── Form labels ── */
   #vpd-wrap .form-label {
-    font-size: .78rem;
-    font-weight: 500;
-    margin-bottom: 4px;
-    color: #333;
+    font-size: .75rem;
+    font-weight: 400;
+    color: #777;
+    margin-bottom: 3px;
+    display: block;
   }
+
+  /* ── Inputs & selects ── */
   #vpd-wrap .form-control,
   #vpd-wrap .form-select {
-    font-size: .82rem;
-    border-radius: 3px;
-    border-color: #bbb;
-    padding: 5px 10px;
-    height: 34px;
+    display: block;
+    width: 100%;
+    height: 38px;
+    padding: 0 10px;
+    font-size: .83rem;
+    color: #222;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color .15s, box-shadow .15s;
   }
+  /* Custom chevron for selects — overrides Bootstrap's default arrow */
+  #vpd-wrap .form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+    padding-right: 28px;
+    cursor: pointer;
+  }
+  #vpd-wrap .form-control::placeholder { color: #c0c0c0; }
   #vpd-wrap .form-control:focus,
   #vpd-wrap .form-select:focus {
-    border-color: #666;
-    box-shadow: 0 0 0 .15rem rgba(0,0,0,.1);
+    border-color: #e87722;
+    box-shadow: 0 0 0 .13rem rgba(232,119,34,.18);
+    outline: none;
   }
+
+  /* ── Date fields ── */
   #vpd-wrap .vpd-date-wrap { position: relative; }
-  #vpd-wrap .vpd-date-wrap .form-control { padding-right: 32px; }
+  #vpd-wrap .vpd-date-wrap .form-control { padding-left: 32px; }
   #vpd-wrap .vpd-date-wrap .bi-calendar3 {
     position: absolute;
-    right: 9px;
+    left: 9px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: .85rem;
-    color: #555;
+    font-size: .78rem;
+    color: #aaa;
     pointer-events: none;
   }
   #vpd-wrap input[type="date"]::-webkit-calendar-picker-indicator {
     opacity: 0;
     position: absolute;
-    right: 0;
+    left: 0;
     width: 32px;
     height: 100%;
     cursor: pointer;
   }
-  #vpd-wrap .invalid-feedback { font-size: .72rem; }
+
+  /* ── Validation ── */
+  #vpd-wrap .invalid-feedback {
+    font-size: .69rem;
+    color: #dc3545;
+    display: none;
+    margin-top: 2px;
+  }
+  #vpd-wrap .was-validated .form-control:invalid ~ .invalid-feedback,
+  #vpd-wrap .was-validated .form-select:invalid ~ .invalid-feedback,
+  #vpd-wrap .form-control.is-invalid ~ .invalid-feedback,
+  #vpd-wrap .form-select.is-invalid ~ .invalid-feedback { display: block; }
   #vpd-wrap .form-control.is-invalid,
   #vpd-wrap .form-select.is-invalid {
     border-color: #dc3545;
     background-image: none;
-    padding-right: 10px;
   }
-  #vpd-wrap .vpd-col-divider { border-left: 1px solid #e5e5e5; }
-  #vpd-wrap .vpd-section-label {
-    font-size: .7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: #888;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 4px;
-    margin-bottom: 10px;
-    margin-top: 4px;
+  /* Keep chevron on invalid selects */
+  #vpd-wrap .form-select.is-invalid {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
-  #vpd-wrap .vpd-desc {
-    font-size: .75rem;
-    color: #555;
-    line-height: 1.5;
-    text-align: center;
-    margin-bottom: 14px;
+
+  /* ── Right passport card ── */
+  #vpd-wrap .vpd-right-card {
+    background: #f5f5f5;
+    border-radius: 6px;
+    padding: 20px 22px 24px;
+    height: 100%;
+    box-sizing: border-box;
   }
+  /* Inputs on gray background get white so they pop */
+  #vpd-wrap .vpd-right-card .form-control,
+  #vpd-wrap .vpd-right-card .form-select { background-color: #fff; }
+
+  /* ── Passport scan display ── */
   #vpd-wrap .vpd-photo {
-    border: 1px solid #bbb;
-    background: #f8f8f8;
-    aspect-ratio: 4 / 3;
-    width: 100%;
     position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: #ddd;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    margin-top: 16px;
   }
   #vpd-wrap .vpd-photo::before,
   #vpd-wrap .vpd-photo::after {
@@ -134,7 +208,7 @@
     position: absolute;
     width: 140%;
     height: 1px;
-    background: #bbb;
+    background: #c0c0c0;
     top: 50%;
     left: -20%;
   }
@@ -149,24 +223,69 @@
     height: 100%;
     object-fit: contain;
   }
+
+  /* ── Save button ── */
   #vpd-wrap .vpd-btn-save {
-    background: #d0d0d0;
-    border: 1px solid #aaa;
-    color: #333;
-    font-size: .8rem;
-    padding: 5px 26px;
-    border-radius: 3px;
-    font-weight: 500;
+    display: inline-block;
+    background: #e87722;
+    border: none;
+    color: #fff;
+    font-size: .88rem;
+    font-weight: 600;
+    padding: 9px 30px;
+    border-radius: 4px;
     cursor: pointer;
+    margin-top: 20px;
+    transition: background .15s;
   }
-  #vpd-wrap .vpd-btn-save:hover {
-    background: #b8b8b8;
-    border-color: #888;
-    color: #111;
+  #vpd-wrap .vpd-btn-save:hover  { background: #c96518; }
+  #vpd-wrap .vpd-btn-save:disabled { background: #ccc; color: #888; cursor: not-allowed; }
+
+  /* ── Spacing overrides ── */
+  #vpd-wrap .mb-2 { margin-bottom: 10px !important; }
+  #vpd-wrap .mb-3 { margin-bottom: 13px !important; }
+
+  /* ── OCR Loader ── */
+  #vpd-wrap .vpd-loader-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.85);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+  }
+  #vpd-wrap {
+      position: relative; /* needed for overlay positioning */
+  }
+  #vpd-wrap .vpd-loader-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+  }
+  #vpd-wrap .vpd-spinner {
+      width: 42px;
+      height: 42px;
+      border: 4px solid #e0e0e0;
+      border-top-color: #1F3864;
+      border-radius: 50%;
+      animation: vpd-spin 0.8s linear infinite;
+  }
+  @keyframes vpd-spin {
+      to { transform: rotate(360deg); }
+  }
+  #vpd-wrap .vpd-loader-text {
+      font-size: .88rem;
+      font-weight: 600;
+      color: #1F3864;
+      margin: 0;
   }
 </style>
 
-<!-- Shared country options — injected by JS into every country select -->
+
+<!-- Country data source — injected by JS into every country/phone select -->
 <datalist id="vpd-countries-src" style="display:none">
   <option value="Afghanistan">+93</option>
   <option value="Albania">+355</option>
@@ -365,19 +484,31 @@
   <option value="Zimbabwe">+263</option>
 </datalist>
 
-<div id="vpd-wrap">
 
-  <!-- Header -->
+<div id="vpd-wrap">
+  <!-- OCR Loader -->
+  <div id="vpd-ocr-loader" style="display:none;">
+      <div class="vpd-loader-overlay">
+          <div class="vpd-loader-box">
+              <div class="vpd-spinner"></div>
+              <p class="vpd-loader-text">Reading passport data…</p>
+          </div>
+      </div>
+  </div>
+
+  <!-- ── Header ── -->
   <div class="vpd-header">
-    <h6 class="vpd-title">Verify Passport Data</h6>
+    <h6 class="vpd-title">Principal info</h6>
     <button type="button" class="vpd-close" aria-label="Close">&#x2715;</button>
   </div>
 
-  <!-- Body -->
+  <!-- ── Body ── -->
   <div class="vpd-body">
 
+    <!-- Logged-in badge -->
     <div class="vpd-loggedin">
-      Logged in as: <span>$(DisplayName)</span>
+      <span class="vpd-check-icon">&#10003;</span>
+      <span class="vpd-name">$(DisplayName)</span>
     </div>
 
     <form method="post" id="aspForm_16" novalidate>
@@ -389,239 +520,246 @@
       <input type="hidden" name="ASPFormId" value="16" />
       <input type="hidden" name="UserToken" value="$(Token)" />
 
-      <div class="row g-0">
+      <div class="row g-4">
 
-        <!-- ── Col 1 · Personal details ── -->
-        <div class="col-md-4 pe-3">
+        <!-- ══════════════════════════════════════
+             LEFT COLUMN · Personal + Additional
+             ══════════════════════════════════════ -->
+        <div class="col-md-6">
 
-          <div class="vpd-section-label">Personal Details</div>
+          <div class="vpd-section-label">Personal details</div>
 
-          <div class="mb-3">
-            <label class="form-label" for="FirstName">First Name</label>
-            <input type="text" class="form-control" id="FirstName" name="FirstName"
-                   required autocomplete="given-name" />
-            <div class="invalid-feedback">First name is required.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="MiddleName">Middle Name</label>
-            <input type="text" class="form-control" id="MiddleName" name="MiddleName"
-                   autocomplete="additional-name" />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="Surname">Surname</label>
-            <input type="text" class="form-control" id="Surname" name="Surname"
-                   required autocomplete="family-name" />
-            <div class="invalid-feedback">Surname is required.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="DOB">Date of Birth</label>
-            <div class="vpd-date-wrap">
-              <input type="date" class="form-control" id="DOB" name="DOB" required />
-              <i class="bi bi-calendar3"></i>
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label" for="FirstName">First name</label>
+              <input type="text" class="form-control" id="FirstName" name="FirstName"
+                     placeholder="First name" required autocomplete="given-name" />
+              <div class="invalid-feedback">Required.</div>
             </div>
-            <div class="invalid-feedback">Date of birth is required.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="Gender">Gender</label>
-            <select class="form-select" id="Gender" name="Gender" required>
-              <option value="" selected disabled></option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-            <div class="invalid-feedback">Please select a gender.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="Nationality">Nationality</label>
-            <select class="form-select" id="Nationality" name="Nationality" required>
-              <option value="" selected disabled></option>
-            </select>
-            <div class="invalid-feedback">Please select a nationality.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="MaritalStatus">Marital Status</label>
-            <select class="form-select" id="MaritalStatus" name="MaritalStatus" required>
-              <option value="" selected disabled></option>
-              <option value="Single">Single</option>
-              <option value="Married">Married</option>
-              <option value="Divorced">Divorced</option>
-              <option value="Widowed">Widowed</option>
-              <option value="Separated">Separated</option>
-              <option value="Other">Other</option>
-            </select>
-            <div class="invalid-feedback">Please select a marital status.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="CountryOfBirth">Country of Birth</label>
-            <select class="form-select" id="CountryOfBirth" name="CountryOfBirth" required>
-              <option value="" selected disabled></option>
-            </select>
-            <div class="invalid-feedback">Country of birth is required.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="PlaceOfBirth">Place of Birth</label>
-            <input type="text" class="form-control" id="PlaceOfBirth" name="PlaceOfBirth" required />
-            <div class="invalid-feedback">Place of birth is required.</div>
-          </div>
-
-        </div><!-- /col-1 -->
-
-        <!-- ── Col 2 · Passport + Contact details ── -->
-        <div class="col-md-4 px-3 vpd-col-divider">
-
-          <div class="vpd-section-label">Passport Details</div>
-
-          <div class="mb-3">
-            <label class="form-label" for="PassportType">Passport Type</label>
-            <select class="form-select" id="PassportType" name="PassportType" required>
-              <option value="" selected disabled></option>
-              <option value="Ordinary">Ordinary</option>
-              <option value="Diplomatic">Diplomatic</option>
-              <option value="Official/Service">Official/Service</option>
-              <option value="ID Card">ID Card</option>
-              <option value="Other">Other</option>
-            </select>
-            <div class="invalid-feedback">Please select a passport type.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="PassportNumber">Passport Number</label>
-            <input type="text" class="form-control" id="PassportNumber" name="PassportNumber"
-                   required maxlength="20"
-                   pattern="[A-Za-z0-9\-]{3,20}"
-                   title="Letters, numbers and hyphens only (3–20 characters)" />
-            <div class="invalid-feedback">A valid passport number is required.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="PassportIssuingCountry">Passport Issuing Country</label>
-            <select class="form-select" id="PassportIssuingCountry"
-                    name="PassportIssuingCountry" required>
-              <option value="" selected disabled></option>
-            </select>
-            <div class="invalid-feedback">Please select the issuing country.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="PassportIssuingLocation">Passport Issuing Location</label>
-            <input type="text" class="form-control" id="PassportIssuingLocation"
-                   name="PassportIssuingLocation" required />
-            <div class="invalid-feedback">Issuing location is required.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="PassportDateOfIssue">Date of Issue</label>
-            <div class="vpd-date-wrap">
-              <input type="date" class="form-control" id="PassportDateOfIssue"
-                     name="PassportDateOfIssue" required />
-              <i class="bi bi-calendar3"></i>
+            <div class="col-6">
+              <label class="form-label" for="MiddleName">Middle name</label>
+              <input type="text" class="form-control" id="MiddleName" name="MiddleName"
+                     placeholder="Middle name" autocomplete="additional-name" />
             </div>
-            <div class="invalid-feedback">Date of issue is required.</div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label" for="Surname">Surname</label>
+              <input type="text" class="form-control" id="Surname" name="Surname"
+                     placeholder="Surname" required autocomplete="family-name" />
+              <div class="invalid-feedback">Required.</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label" for="DOB">Date of birth</label>
+              <div class="vpd-date-wrap">
+                <input type="date" class="form-control" id="DOB" name="DOB" required />
+                <i class="bi bi-calendar3"></i>
+              </div>
+              <div class="invalid-feedback">Required.</div>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label" for="Gender">Gender</label>
+              <select class="form-select" id="Gender" name="Gender" required>
+                <option value="" selected disabled></option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+              <div class="invalid-feedback">Required.</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label" for="Nationality">Nationality</label>
+              <select class="form-select" id="Nationality" name="Nationality" required>
+                <option value="" selected disabled></option>
+              </select>
+              <div class="invalid-feedback">Required.</div>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label" for="MaritalStatus">Marital status</label>
+              <select class="form-select" id="MaritalStatus" name="MaritalStatus" required>
+                <option value="" selected disabled></option>
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+                <option value="Divorced">Divorced</option>
+                <option value="Widowed">Widowed</option>
+                <option value="Separated">Separated</option>
+                <option value="Other">Other</option>
+              </select>
+              <div class="invalid-feedback">Required.</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label" for="CountryOfBirth">Country of birth</label>
+              <select class="form-select" id="CountryOfBirth" name="CountryOfBirth" required>
+                <option value="" selected disabled></option>
+              </select>
+              <div class="invalid-feedback">Required.</div>
+            </div>
           </div>
 
           <div class="mb-3">
-            <label class="form-label" for="PassportExpDate">Expiration Date</label>
-            <div class="vpd-date-wrap">
-              <input type="date" class="form-control" id="PassportExpDate"
-                     name="PassportExpDate" required />
-              <i class="bi bi-calendar3"></i>
-            </div>
-            <div class="invalid-feedback">Expiration date is required.</div>
+            <label class="form-label" for="PlaceOfBirth">Place of birth</label>
+            <input type="text" class="form-control" id="PlaceOfBirth" name="PlaceOfBirth"
+                   placeholder="Place of birth" required />
+            <div class="invalid-feedback">Required.</div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label" for="ImmigrationStatus">Immigration Status <span style="color:#c00">*</span></label>
-                <select class="form-select" id="ImmigrationStatus" name="ImmigrationStatus" required>
-                    <option value="" selected disabled></option>
-                    <option value="Citizen">Citizen</option>
-                    <option value="Student">Student</option>
-                    <option value="Tourist">Tourist</option>
-                    <option value="Work">Work</option>
-                    <option value="Other">Other</option>
-                </select>
-                <div class="invalid-feedback">Please select an immigration status.</div>
-            </div>
+          <!-- ── Additional details ── -->
+          <div class="vpd-section-label vpd-section-gap">Additional details</div>
 
-          <div class="vpd-section-label" style="margin-top:16px;">Contact &amp; Residence</div>
-
-          <div class="mb-3">
-            <label class="form-label" for="CurrentResidentialAdd">Residential Address</label>
+          <div class="mb-2">
+            <label class="form-label" for="CurrentResidentialAdd">Current residential address</label>
             <input type="text" class="form-control" id="CurrentResidentialAdd"
-                   name="CurrentResidentialAdd" required />
-            <div class="invalid-feedback">Residential address is required.</div>
+                   name="CurrentResidentialAdd" placeholder="Current residential address" required />
+            <div class="invalid-feedback">Required.</div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label" for="CityOfResidence">City of Residence</label>
-            <input type="text" class="form-control" id="CityOfResidence"
-                   name="CityOfResidence" required />
-            <div class="invalid-feedback">City of residence is required.</div>
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label" for="CityOfResidence">City of residence</label>
+              <input type="text" class="form-control" id="CityOfResidence"
+                     name="CityOfResidence" placeholder="City of residence" required />
+              <div class="invalid-feedback">Required.</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label" for="CountryOfResidence">Country of residence</label>
+              <select class="form-select" id="CountryOfResidence" name="CountryOfResidence" required>
+                <option value="" selected disabled></option>
+              </select>
+              <div class="invalid-feedback">Required.</div>
+            </div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label" for="CountryOfResidence">Country of Residence</label>
-            <select class="form-select" id="CountryOfResidence" name="CountryOfResidence" required>
-              <option value="" selected disabled></option>
-            </select>
-            <div class="invalid-feedback">Country of residence is required.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="Email">Email Address</label>
+          <div class="mb-2">
+            <label class="form-label" for="Email">Email address</label>
             <input type="email" class="form-control" id="Email" name="Email"
-                   required autocomplete="email" />
+                   placeholder="Email address" required autocomplete="email" />
             <div class="invalid-feedback">A valid email address is required.</div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label" for="CountryPhoneCode">Phone Code</label>
-            <select class="form-select" id="CountryPhoneCode" name="CountryPhoneCode" required>
-              <option value="" selected disabled></option>
-            </select>
-            <div class="invalid-feedback">Please select a phone code.</div>
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label" for="CountryPhoneCode">Country of phone number</label>
+              <select class="form-select" id="CountryPhoneCode" name="CountryPhoneCode" required>
+                <option value="" selected disabled></option>
+              </select>
+              <div class="invalid-feedback">Required.</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label" for="PhoneNumber">Phone number</label>
+              <input type="tel" class="form-control" id="PhoneNumber" name="PhoneNumber"
+                     placeholder="Phone number" required pattern="[0-9]{6,15}"
+                     title="Digits only (6–15 characters)" />
+              <div class="invalid-feedback">Required.</div>
+            </div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label" for="PhoneNumber">Phone Number</label>
-            <input type="tel" class="form-control" id="PhoneNumber" name="PhoneNumber"
-                   required pattern="[0-9]{6,15}"
-                   title="Digits only (6–15 characters)" />
-            <div class="invalid-feedback">A valid phone number is required.</div>
-          </div>
+          <button type="submit" class="vpd-btn-save">Save</button>
 
-        </div><!-- /col-2 -->
+        </div><!-- /left col -->
 
-        <!-- ── Col 3 · Description + photo + save ── -->
-        <div class="col-md-4 ps-3 vpd-col-divider d-flex flex-column">
 
-          <p class="vpd-desc">
-            The following data fields were extracted from your passport via the
-            Machine Readable Zone. Please check the extracted data and amend where
-            necessary. You will be able to upload a new passport and/or update the
-            fields at any time.
-          </p>
+        <!-- ══════════════════════════════════════
+             RIGHT COLUMN · Passport card
+             ══════════════════════════════════════ -->
+        <div class="col-md-6 d-flex flex-column">
+          <div class="vpd-right-card flex-fill">
 
-          <div class="vpd-photo mb-3">
-            <img id="passportPhoto" alt="Passport photo" style="display:none;" />
-          </div>
+            <div class="vpd-section-label">Latest passport information</div>
 
-          <div class="mt-auto text-end">
-            <button type="submit" class="vpd-btn-save">Save</button>
-          </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label" for="PassportType">Passport type</label>
+                <select class="form-select" id="PassportType" name="PassportType" required>
+                  <option value="" selected disabled></option>
+                  <option value="Ordinary">Ordinary</option>
+                  <option value="Diplomatic">Diplomatic</option>
+                  <option value="Official/Service">Official/Service</option>
+                  <option value="ID Card">ID Card</option>
+                  <option value="Other">Other</option>
+                </select>
+                <div class="invalid-feedback">Required.</div>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="PassportNumber">Passport number</label>
+                <input type="text" class="form-control" id="PassportNumber" name="PassportNumber"
+                       placeholder="Passport number" required maxlength="20"
+                       pattern="[A-Za-z0-9\-]{3,20}"
+                       title="Letters, numbers and hyphens only (3–20 characters)" />
+                <div class="invalid-feedback">Required.</div>
+              </div>
+            </div>
 
-        </div><!-- /col-3 -->
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label" for="PassportExpDate">Expiry date</label>
+                <div class="vpd-date-wrap">
+                  <input type="date" class="form-control" id="PassportExpDate"
+                         name="PassportExpDate" required />
+                  <i class="bi bi-calendar3"></i>
+                </div>
+                <div class="invalid-feedback">Required.</div>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="PassportDateOfIssue">Date of issue</label>
+                <div class="vpd-date-wrap">
+                  <input type="date" class="form-control" id="PassportDateOfIssue"
+                         name="PassportDateOfIssue" required />
+                  <i class="bi bi-calendar3"></i>
+                </div>
+                <div class="invalid-feedback">Required.</div>
+              </div>
+            </div>
 
-      </div><!-- /row -->
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label" for="PassportIssuingLocation">Issuing location</label>
+                <input type="text" class="form-control" id="PassportIssuingLocation"
+                       name="PassportIssuingLocation" placeholder="Issuing location" required />
+                <div class="invalid-feedback">Required.</div>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="PassportIssuingCountry">Issuing country</label>
+                <select class="form-select" id="PassportIssuingCountry"
+                        name="PassportIssuingCountry" required>
+                  <option value="" selected disabled></option>
+                </select>
+                <div class="invalid-feedback">Required.</div>
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label" for="ImmigrationStatus">Immigration status</label>
+              <select class="form-select" id="ImmigrationStatus" name="ImmigrationStatus" required>
+                <option value="" selected disabled></option>
+                <option value="Citizen">Citizen</option>
+                <option value="Student">Student</option>
+                <option value="Tourist">Tourist</option>
+                <option value="Work">Work</option>
+                <option value="Other">Other</option>
+              </select>
+              <div class="invalid-feedback">Required.</div>
+            </div>
+
+            <!-- Passport scan -->
+            <div class="vpd-photo">
+              <img id="passportPhoto" alt="Passport scan" style="display:none;" />
+            </div>
+
+          </div><!-- /vpd-right-card -->
+        </div><!-- /right col -->
+
+      </div><!-- /main row -->
+
     </form>
   </div><!-- /vpd-body -->
 </div><!-- /#vpd-wrap -->
+
 
 <script>
 (function () {
@@ -629,8 +767,6 @@
 
   var REDIRECT_URL = 'https://dev.pinpoint.web.za/Pages/Page?menuID=139';
 
-  // ── Build country options from the shared datalist ──────────────────────────
-  // Each <option> in #vpd-countries-src has value=CountryName, text=DialCode
   var srcOptions = document.querySelectorAll('#vpd-countries-src option');
 
   var countrySelectIds  = ['Nationality', 'CountryOfBirth', 'PassportIssuingCountry', 'CountryOfResidence'];
@@ -641,17 +777,16 @@
     if (!sel) return;
     srcOptions.forEach(function (opt) {
       var o = document.createElement('option');
-      o.value       = opt.value;          // exact fldCountryName — matches SP lookup
+      o.value       = opt.value;
       o.textContent = opt.value;
       sel.appendChild(o);
     });
   });
 
-  // Phone code select: value = dial code (+xx), label = "CountryName (+xx)"
   var phoneSel = document.getElementById(phoneCodeSelectId);
   if (phoneSel) {
     srcOptions.forEach(function (opt) {
-      var dialCode = opt.textContent.trim(); // e.g. "+254"
+      var dialCode = opt.textContent.trim();
       var o = document.createElement('option');
       o.value       = dialCode;
       o.textContent = opt.value + ' (' + dialCode + ')';
@@ -659,7 +794,6 @@
     });
   }
 
-  // ── Date validation ──────────────────────────────────────────────────────────
   var wrap = document.getElementById('vpd-wrap');
   var form = document.getElementById('aspForm_16');
 
@@ -690,7 +824,6 @@
   document.getElementById('PassportDateOfIssue').addEventListener('change', validateDates);
   document.getElementById('PassportExpDate').addEventListener('change', validateDates);
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     e.stopPropagation();
@@ -724,7 +857,6 @@
     });
   });
 
-  // ── Live validation feedback ─────────────────────────────────────────────────
   form.querySelectorAll('.form-control, .form-select').forEach(function (el) {
     el.addEventListener('input', function () {
       if (el.checkValidity()) el.classList.remove('is-invalid');

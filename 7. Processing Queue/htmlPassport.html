@@ -1,0 +1,133 @@
+<style>
+  #passport-card {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    color: #333;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px;
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    background: #f4f6f8;
+    border-radius: 10px;
+  }
+  #passport-card .pc-header {
+    min-width: 160px;
+    max-width: 180px;
+    flex-shrink: 0;
+  }
+  #passport-card .pc-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 4px 0;
+  }
+  #passport-card .pc-subtitle {
+    font-size: 12px;
+    color: #888;
+    margin: 0;
+    line-height: 1.4;
+  }
+  #passport-card .pc-body {
+    flex: 1;
+  }
+  #passport-card .pc-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px 16px;
+    width: 100%;
+  }
+  #passport-card .pc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  #passport-card .pc-field.full {
+    grid-column: 1 / -1;
+  }
+  #passport-card .pc-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+  }
+  #passport-card .pc-label {
+    font-size: 11px;
+    color: #888;
+  }
+</style>
+<div id="passport-card">
+  <div class="pc-header">
+    <p class="pc-title">Passport information</p>
+    <p class="pc-subtitle">Details listed on the applicant's passport</p>
+  </div>
+  <div class="pc-body">
+    <div class="pc-grid">
+      <div class="pc-field full">
+        <span class="pc-value" id="pc-type">—</span>
+        <span class="pc-label">Type</span>
+      </div>
+      <div class="pc-field full">
+        <span class="pc-value" id="pc-passnum">—</span>
+        <span class="pc-label">Passport number</span>
+      </div>
+      <div class="pc-field">
+        <span class="pc-value" id="pc-country">—</span>
+        <span class="pc-label">Issuing Country</span>
+      </div>
+      <div class="pc-field">
+        <span class="pc-value" id="pc-place">—</span>
+        <span class="pc-label">Place of issue</span>
+      </div>
+      <div class="pc-field">
+        <span class="pc-value" id="pc-doi">—</span>
+        <span class="pc-label">Date of issue</span>
+      </div>
+      <div class="pc-field">
+        <span class="pc-value" id="pc-doe">—</span>
+        <span class="pc-label">Date of expiry</span>
+      </div>
+      <div class="pc-field">
+        <span class="pc-value" id="pc-nat">—</span>
+        <span class="pc-label">Nationality</span>
+      </div>
+      <div class="pc-field full">
+        <span class="pc-value" id="pc-prevpass">—</span>
+        <span class="pc-label">Previous passports</span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  function getVal(id) {
+    var el = document.getElementById(id);
+    if (!el) return "—";
+    var input = el.querySelector("input, select, textarea");
+    return (input && input.value.trim()) ? input.value.trim() : "—";
+  }
+  function updatePassportCard() {
+    document.getElementById("pc-type").textContent      = getVal("q59");
+    document.getElementById("pc-passnum").textContent   = getVal("q60");
+    document.getElementById("pc-country").textContent   = getVal("q61");
+    document.getElementById("pc-place").textContent     = getVal("q62");
+    document.getElementById("pc-doi").textContent       = getVal("q65");
+    document.getElementById("pc-doe").textContent       = getVal("q66");
+    document.getElementById("pc-nat").textContent       = getVal("q63");
+    document.getElementById("pc-prevpass").textContent  = getVal("q64");
+  }
+  function initPassportCard() {
+    updatePassportCard();
+    ["q59","q60","q61","q62","q65","q66","q63","q64"].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("change", updatePassportCard);
+        el.addEventListener("input", updatePassportCard);
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPassportCard);
+  } else {
+    setTimeout(initPassportCard, 500);
+  }
+</script>

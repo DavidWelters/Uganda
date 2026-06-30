@@ -1,8 +1,7 @@
-
 <script>
 function waitForLookupComplete(callback) {
     var counter = 0;
-    var maxWait = 15000;
+    var maxWait = 5000;
     var fallbackTimer = null;
 
     function done() {
@@ -35,20 +34,16 @@ function saveAndClose(e) {
     refreshBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
 
-    $('#lookup1609').trigger('click');
+    $('#lookup215').trigger('click');
 
     waitForLookupComplete(function () {
-        var token = new URL(window.location.href).searchParams.get('token') || '';
-        window.location.href = 'https://lf.automatenow.co.za/Forms/FamilyMembers'
-            + '?token=' + encodeURIComponent(token);
+        window.location.href = $('.familyListUrl input').val();
     });
     return false;
 }
 
 function goBack() {
-    var token = new URL(window.location.href).searchParams.get('token') || '';
-    window.location.href = 'https://lf.automatenow.co.za/Forms/FamilyMembers'
-        + '?token=' + encodeURIComponent(token);
+    window.location.href = $('.familyListUrl input').val();
 }
 
 function saveAndRefresh(e) {
@@ -60,7 +55,7 @@ function saveAndRefresh(e) {
     refreshBtn.disabled = true;
     refreshBtn.textContent = 'Saving...';
 
-    $('#lookup1609').trigger('click');
+    $('#lookup215').trigger('click');
 
     waitForLookupComplete(function () {
         window.location.reload();

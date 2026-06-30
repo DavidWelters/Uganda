@@ -1,0 +1,372 @@
+<style>
+  :root { --🥚: 'SmVhbiBCb3RoYQ=='; }
+
+  #gw-wrap {
+    font-family: inherit;
+    padding: 8px 0;
+  }
+
+  #gw-notice {
+    display: none;
+    color: #c00;
+    text-align: center;
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+
+  .gw-grid {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 24px;
+    align-items: flex-start;
+  }
+
+  .gw-left {
+    flex: 0 0 55%;
+  }
+
+  .gw-right {
+    flex: 1 1 auto;
+  }
+
+  .gw-heading {
+    font-weight: bold;
+    margin: 0 0 6px;
+    color: #000;
+  }
+
+  .gw-left p {
+    margin: 0 0 6px;
+    color: #000;
+  }
+
+  .gw-left ul {
+    margin: 6px 0 0 18px;
+    padding: 0;
+    color: #000;
+  }
+
+  .gw-left ul li {
+    margin-bottom: 4px;
+    line-height: 1.5;
+  }
+
+  .gw-fee-table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  .gw-fee-table th,
+  .gw-fee-table td {
+    text-align: left;
+    padding: 4px 16px 4px 0;
+    font-weight: normal;
+    color: #000;
+  }
+
+  .gw-fee-table th {
+    font-weight: bold;
+  }
+
+  .gw-red { color: #c00 !important; }
+
+  .gw-right p {
+    margin: 0 0 10px;
+    color: #000;
+  }
+
+  #gw-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 32px;
+  }
+
+  .gw-btn {
+    background: #eb7215;
+    border: 1px solid #c45e0f;
+    padding: 5px 28px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #fff;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+
+  .gw-btn:hover { background: #d46412; }
+
+  #gw-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #gw-overlay.gw-open { display: flex; }
+
+  #gw-modal {
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 32px 36px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  }
+
+  #gw-modal p {
+    margin: 0 0 24px;
+    color: #000;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+
+  #gw-modal-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  #gw-summary {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+    text-align: left;
+    font-size: 13px;
+  }
+
+  #gw-summary td {
+    padding: 4px 8px;
+    color: #000;
+    border-bottom: 1px solid #eee;
+  }
+
+  #gw-summary td:first-child {
+    font-weight: bold;
+    white-space: nowrap;
+    width: 1%;
+    padding-right: 16px;
+  }
+
+</style>
+
+<div id="gw-wrap">
+
+  <p id="gw-notice"></p>
+
+  <div class="gw-grid">
+    <div class="gw-left">
+      <p class="gw-heading">Application Fee</p>
+      <ul>
+        <li>Payment must be done before the application will be processed.</li>
+        <li>This payment MUST be done online.</li>
+        <li>Online payments are non-refundable and may be subject to a surcharge fee.</li>
+      </ul>
+    </div>
+    <div class="gw-right">
+      <table class="gw-fee-table">
+        <thead>
+          <tr>
+            <th>Cost per person</th>
+            <th class="gw-red">Payment time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>USD <span id="gw-cost">—</span></td>
+            <td class="gw-red">Before submission of application</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="gw-grid">
+    <div class="gw-left">
+      <p class="gw-heading">Supporting docs</p>
+      <p>Be aware that additional mandatory documents may be requested depending on the purpose of your visit.</p>
+      <ul>
+        <li>Supported formats: JPG, JPEG, PNG, BMP, PDF</li>
+        <li>Minimum file size: 5KB</li>
+        <li>Maximum file size: 10MB</li>
+      </ul>
+    </div>
+    <div class="gw-right">
+      <p class="gw-heading">Mandatory documents</p>
+      <div id="gw-docs-list"><p>—</p></div>
+    </div>
+  </div>
+
+  <div id="gw-buttons">
+    <button type="button" class="gw-btn" onclick="gwNext()">Next</button>
+  </div>
+
+</div>
+
+<div id="gw-overlay">
+  <div id="gw-modal">
+    <p>Are you sure the information selected is correct?</p>
+    <table id="gw-summary"></table>
+    <div id="gw-modal-btns">
+      <button type="button" class="gw-btn" onclick="gwConfirmCancel()">Cancel</button>
+      <button type="button" class="gw-btn" onclick="gwConfirmGo()">Confirm &amp; continue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var _sig = 'SmVhbiBCb3RoYQ==';
+
+  // ── Cost per person (Field8) ──────────────────────────────────────────
+  function updateCost(raw) {
+    var el = document.getElementById('gw-cost');
+    if (!el) return;
+    var num = parseFloat((raw || '').replace(/[^0-9.]/g, ''));
+    el.textContent = isNaN(num) ? (raw || '—') : num;
+  }
+
+  var costTries = 0;
+  var costTimer = setInterval(function(){
+    var field = document.getElementById('Field8');
+    if (!field) { if (++costTries > 30) clearInterval(costTimer); return; }
+    clearInterval(costTimer);
+    if (field.value) updateCost(field.value);
+    var proto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    Object.defineProperty(field, 'value', {
+      get: function()  { return proto.get.call(this); },
+      set: function(v) { proto.set.call(this, v); updateCost(v); },
+      configurable: true
+    });
+    field.addEventListener('input',  function(){ updateCost(field.value); });
+    field.addEventListener('change', function(){ updateCost(field.value); });
+  }, 300);
+
+  // ── Mandatory documents (Field84 collection) ──────────────────────────
+  var docsUpdating = false;
+
+  function updateDocs() {
+    var list = document.getElementById('gw-docs-list');
+    if (!list) return;
+    var inputs = document.querySelectorAll('input[id^="Field103("]');
+    var items = [];
+    inputs.forEach(function(inp){ if (inp.value) items.push(inp.value); });
+    var html = items.length
+      ? items.map(function(d){ return '<p>' + d + '</p>'; }).join('')
+      : '<p>—</p>';
+    if (list.innerHTML === html) return;
+    docsUpdating = true;
+    list.innerHTML = html;
+    docsUpdating = false;
+  }
+
+  var protoDoc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  function hookDocField(f) {
+    if (f._gwHooked) return;
+    f._gwHooked = true;
+    Object.defineProperty(f, 'value', {
+      get: function()  { return protoDoc.get.call(this); },
+      set: function(v) { protoDoc.set.call(this, v); updateDocs(); },
+      configurable: true
+    });
+    f.addEventListener('input',  updateDocs);
+    f.addEventListener('change', updateDocs);
+  }
+
+  var docTries = 0;
+  var docTimer = setInterval(function(){
+    var fields = document.querySelectorAll('input[id^="Field103("]');
+    if (fields.length) { fields.forEach(hookDocField); updateDocs(); clearInterval(docTimer); }
+    else if (++docTries > 30) clearInterval(docTimer);
+  }, 300);
+
+  var domObs = new MutationObserver(function(mutations){
+    if (docsUpdating) return;
+    document.querySelectorAll('input[id^="Field103("]').forEach(hookDocField);
+    var hadRemovals = mutations.some(function(m){ return m.removedNodes.length > 0; });
+    if (hadRemovals) updateDocs();
+  });
+  (document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', function(){ domObs.observe(document.body, { childList: true, subtree: true }); })
+    : domObs.observe(document.body, { childList: true, subtree: true })
+  );
+
+  // ── Helper ────────────────────────────────────────────────────────────
+  function gwGetSelText(id) {
+    var el = document.getElementById(id);
+    if (!el) return '';
+    if (el.tagName === 'SELECT') {
+      var opt = el.options[el.selectedIndex];
+      return opt ? opt.text.trim() : '';
+    }
+    return (el.value || '').trim();
+  }
+
+  // ── Next button ───────────────────────────────────────────────────────
+  window.gwNext = function() {
+    var notice  = document.getElementById('gw-notice');
+    var appType = gwGetSelText('Field1');
+
+    if (!appType) {
+      notice.textContent = 'Please select an application type before continuing.';
+      notice.style.display = 'block';
+      return;
+    }
+
+    notice.style.setProperty('display', 'none', 'important');
+
+    var family = document.querySelector('li#q5 input:checked');
+    var group  = document.querySelector('li#q6 input:checked');
+
+    var tbody = document.getElementById('gw-summary');
+    tbody.innerHTML = [
+      { label: 'Apply for a new',    val: appType },
+      { label: 'Category',           val: gwGetSelText('Field2') || '—' },
+      { label: 'Sub-Category',       val: gwGetSelText('Field3') || '—' },
+      { label: 'Purpose of visit',   val: gwGetSelText('Field4') || '—' },
+      { label: 'Family application', val: family ? 'Yes' : 'No' },
+      { label: 'Group application',  val: group  ? 'Yes' : 'No' },
+    ].map(function(f){
+      return '<tr><td>' + f.label + '</td><td>' + f.val + '</td></tr>';
+    }).join('');
+
+    document.getElementById('gw-overlay').classList.add('gw-open');
+  };
+
+  window.gwConfirmCancel = function() {
+    document.getElementById('gw-overlay').classList.remove('gw-open');
+  };
+
+  window.gwConfirmGo = function() {
+    document.getElementById('gw-overlay').classList.remove('gw-open');
+
+    var notice  = document.getElementById('gw-notice');
+    var slug    = (document.getElementById('Field113') || {}).value || '';
+    var session = (document.getElementById('Field114') || {}).value || '';
+
+    if (!slug) {
+      notice.textContent = 'No destination form configured for this selection. Please contact support.';
+      notice.style.display = 'block';
+      return;
+    }
+
+    var family = document.querySelector('li#q5 input:checked');
+    var group  = document.querySelector('li#q6 input:checked');
+
+    var params = new URLSearchParams();
+    params.set('session',     session);
+    params.set('type',        gwGetSelText('Field1'));
+    params.set('category',    gwGetSelText('Field2'));
+    params.set('subcategory', gwGetSelText('Field3'));
+    params.set('purpose',     gwGetSelText('Field4'));
+    params.set('family',      family ? family.value : '');
+    params.set('group',       group  ? group.value  : '');
+
+    window.location.href = 'https://pinpoint.web.za/Forms/' + slug + '?' + params.toString();
+  };
+
+})();
+</script>
