@@ -287,10 +287,8 @@ function observeFamilyTable() {
             clearInterval(waitForTable);
             new MutationObserver(scheduleReinject)
                 .observe(target, { childList: true, subtree: true, attributes: true });
-            console.log('[familyList] MutationObserver attached to .familyMember tbody');
         } else if (attempts > 40) {
             clearInterval(waitForTable);
-            console.warn('[familyList] Could not find .familyMember tbody to observe.');
         }
     }, 100);
 }
@@ -311,7 +309,7 @@ function addRowToFamilyTable(firstName, surname, dob, gender, personId) {
         let $newRow = $rows.last();
 
         if (!$newRow.length) {
-            console.warn('[familyList] addRowToFamilyTable: no row found after Add click.');
+            // console.warn('[familyList] addRowToFamilyTable: no row found after Add click.');
             return;
         }
 
@@ -341,8 +339,6 @@ function addRowToFamilyTable(firstName, surname, dob, gender, personId) {
         hideNativeControls();
         styleTableRows();
         styleTableHeaders();
-
-        console.log('[familyList] Row added for personId=' + personId);
 
     }, 400);
 }
@@ -393,8 +389,7 @@ $(document).on('click', '.addfamilybutton button, ' + F.addButton + ' button', f
     let passportNumber = ($('.passportNumber input').val() || '').trim();
     let passportTrue   = ($('.passportTrue input').val() || '').trim();
     let foundPersonId  = ($('.foundPersonId input').val() || '').trim();
-    console.log('Add Family Member clicked:', { sessionToken, type, category, subcategory, purpose, family, group, passportNumber, passportTrue, foundPersonId });
-
+    
     let addFamilyMemberUrl = 'https://pinpoint.web.za/Forms/AddManageFamily'
         + '?session='     + encodeURIComponent(sessionToken)
         + '&type='        + encodeURIComponent(type)
@@ -468,9 +463,8 @@ $(document).on('click', '.addfamilybutton button, ' + F.addButton + ' button', f
 // ════════════════════════════════════════════════════════════════════════════
 
 $(document).ready(function(){
-    /* ── Passport Number injection ───────────────────────────────────────── */
-    var url    = new URL(window.location.href);
-    console.log('Current URL:', url.href);   
+    /* ── Page Url Extraction ───────────────────────────────────────── */
+    var url    = new URL(window.location.href);  
     var sessionToken = url.searchParams.get('session');
     var type  = url.searchParams.get('type');
     var category = url.searchParams.get('category');
@@ -478,8 +472,6 @@ $(document).ready(function(){
     var purpose = url.searchParams.get('purpose');
     var family = url.searchParams.get('family');
     var group = url.searchParams.get('group');
-
-    console.log('URL params:', { sessionToken, type, category, subcategory, purpose, family, group });
     
     if (sessionToken) {
         setTimeout(function () {

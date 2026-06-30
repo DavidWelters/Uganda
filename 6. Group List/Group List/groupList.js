@@ -91,14 +91,32 @@ function editGroup() {
         $cell.find('.cf-field').before($btn);
 
         $btn.on("click", function () {
-            let sessionToken = $(F.sessionToken + ' input').val() || '';
-            let groupId      = $row.find('.groupId input').val() || '';
+            let sessionToken = $('.session input').val() || '';
+            let groupId      = $row.find('.groupId input').val() || '';    
+            let type  = $('.type input').val() || '';
+            let category = $('.category input').val() || '';
+            let subcategory = $('.subcategory input').val() || '';
+            let purpose = $('.purpose input').val() || '';
+            let family = $('.family input').val() || '';
+            let group = $('.group input').val() || '';
+            let passportNumber = ($('.passportNumber input').val() || '').trim();
+            let passportTrue   = ($('.passportTrue input').val() || '').trim();
+            let foundPersonId  = ($('.foundPersonId input').val() || '').trim();
+
+            let editGroupUrl = 'https://pinpoint.web.za/Forms/ManageGroup'
+                + '?session='     + encodeURIComponent(sessionToken)
+                + '&type='        + encodeURIComponent(type)
+                + '&category='    + encodeURIComponent(category)      
+                + '&subcategory=' + encodeURIComponent(subcategory)
+                + '&purpose='     + encodeURIComponent(purpose)       
+                + '&family='      + encodeURIComponent(family || '')
+                + '&group='       + encodeURIComponent(group || '')
+                + '&passport='    + encodeURIComponent(passportNumber || '')
+                + '&groupId='     + encodeURIComponent(groupId || '');
 
             if (!groupId) { alert('Group ID unknown.'); return; }
 
-            window.location.href = 'https://lf.automatenow.co.za/Forms/ManageGroup'
-                + '?token='   + encodeURIComponent(sessionToken)
-                + '&groupId=' + encodeURIComponent(groupId);
+            window.location.href = editGroupUrl;
         });
     });
 }
@@ -198,10 +216,28 @@ function saveAndClose(e) {
 
     var $btn = $(e.target);
     $btn.prop('disabled', true).text('Saving...');
+    
+    //applicantUrl = 'https://pinpoint.web.za/Forms/SingleApplication?session=';  
+    let sessionToken = $('.session input').val() || '';
+    let type  = $('.type input').val() || '';
+    let category = $('.category input').val() || '';
+    let subcategory = $('.subcategory input').val() || '';
+    let purpose = $('.purpose input').val() || '';
+    let family = $('.family input').val() || '';
+    let group = $('.group input').val() || '';
+
+    let applicantUrl = 'https://pinpoint.web.za/Forms/NewVisaApplicationSingle'
+        + '?session='     + encodeURIComponent(sessionToken)
+        + '&type='        + encodeURIComponent(type)
+        + '&category='    + encodeURIComponent(category)      
+        + '&subcategory=' + encodeURIComponent(subcategory)
+        + '&purpose='     + encodeURIComponent(purpose)       
+        + '&family='      + encodeURIComponent(family || '')
+        + '&group='       + encodeURIComponent(group || '')
+
+    $('.applicantUrl input').val(applicantUrl).change();    
 
     $('.Submit').trigger('click');
-    setTimeout(function () { window.close(); }, 2000);
-    return false;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -212,10 +248,28 @@ $(document).on('click', '.addgroupbutton button, ' + F.addButton + ' button', fu
 
     if ($(this).attr('onclick')) return;
 
-    let sessionToken = $(F.sessionToken + ' input').val().trim();
+    let sessionToken = $('.session input').val() || '';
+    let type  = $('.type input').val() || '';
+    let category = $('.category input').val() || '';
+    let subcategory = $('.subcategory input').val() || '';
+    let purpose = $('.purpose input').val() || '';
+    let family = $('.family input').val() || '';
+    let group = $('.group input').val() || '';
+    let passportNumber = ($('.passportNumber input').val() || '').trim();
+    let passportTrue   = ($('.passportTrue input').val() || '').trim();
+    let foundPersonId  = ($('.foundPersonId input').val() || '').trim();
 
-    window.location.href = 'https://lf.automatenow.co.za/Forms/ManageGroup'
-        + '?token=' + encodeURIComponent(sessionToken);
+    let addGroupUrl = 'https://pinpoint.web.za/Forms/ManageGroup'
+        + '?session='     + encodeURIComponent(sessionToken)
+        + '&type='        + encodeURIComponent(type)
+        + '&category='    + encodeURIComponent(category)      
+        + '&subcategory=' + encodeURIComponent(subcategory)
+        + '&purpose='     + encodeURIComponent(purpose)       
+        + '&family='      + encodeURIComponent(family || '')
+        + '&group='       + encodeURIComponent(group || '')
+        + '&passport='    + encodeURIComponent(passportNumber || '');
+
+    window.location.href = addGroupUrl;
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -224,14 +278,58 @@ $(document).on('click', '.addgroupbutton button, ' + F.addButton + ' button', fu
 
 $(document).ready(function () {
   $('.Submit').hide(); 
-    const url   = new URL(window.location.href);
-    const token = url.searchParams.get('token');
+  
+    /* ── Page Url Extraction ───────────────────────────────────────── */
+    var url    = new URL(window.location.href);  
+    var sessionToken = url.searchParams.get('session');
+    var type  = url.searchParams.get('type');
+    var category = url.searchParams.get('category');
+    var subcategory = url.searchParams.get('subcategory');
+    var purpose = url.searchParams.get('purpose');
+    var family = url.searchParams.get('family');
+    var group = url.searchParams.get('group');
 
-    setTimeout(function () {
-        if (token) {
-             $(F.sessionToken + ' input').val(token).change();
-        }
-    }, 1000);
+    if (sessionToken) {
+        setTimeout(function () {
+            $('.session input').val(sessionToken).change();
+        }, 1000);
+    }
+       
+    if (type) {
+        setTimeout(function () {
+            $('.type input').val(type).change();
+        }, 1000);
+    }
+
+    if (category) {
+        setTimeout(function () {
+            $('.category input').val(category).change();
+        }, 1000);
+    }
+
+    if (subcategory) {
+        setTimeout(function () {
+            $('.subcategory input').val(subcategory).change();
+        }, 1000);
+    }
+    
+    if (purpose) {
+        setTimeout(function () {
+            $('.purpose input').val(purpose).change();
+        }, 1000);
+    }
+    
+    if (family) {
+        setTimeout(function () {
+            $('.family input').val(family).change();
+        }, 1000);
+    }
+    
+    if (group) {
+        setTimeout(function () {
+            $('.group input').val(group).change();
+        }, 1000);
+    }
 
     editGroup();
     removeGroup();

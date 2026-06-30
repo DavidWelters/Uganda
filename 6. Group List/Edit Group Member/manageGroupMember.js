@@ -1,21 +1,187 @@
+var groupListUrl = '';
+var baseUrl = 'https://pinpoint.web.za/Forms/ListGroupMembers';
+// ════════════════════════════════════════════════════════════════════════════
+//  Callback Functions
+// ════════════════════════════════════════════════════════════════════════════
+
+function renderImgOrPdf($img, b64) {
+    if (!b64 || b64.length <= 10) return;
+    var raw = b64.trim();
+    var stripped = raw.startsWith('data:') ? (raw.split(',')[1] || '') : raw;
+    var isPdf = raw.startsWith('data:application/pdf') || stripped.startsWith('JVBERi0');
+    var overlayId = $img.attr('id') + '-pdf-overlay';
+    var $overlay = $('#' + overlayId);
+
+    if (!isPdf) {
+        var src = raw.startsWith('data:') ? raw : 'data:image/jpeg;base64,' + raw;
+        $img.attr('src', src).show();
+        $overlay.hide();
+        return;
+    }
+
+    var imgWidth = $img[0].style.width || ($img.outerWidth() > 0 ? $img.outerWidth() + 'px' : '280px');
+    $img.hide();
+    if (!$overlay.length) {
+        $overlay = $('<div></div>').attr('id', overlayId).css({
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', width: imgWidth, minHeight: '160px',
+            gap: '8px', border: '1px solid #ddd', borderRadius: '4px',
+            background: '#f8f9fa', boxSizing: 'border-box'
+        });
+        $img.after($overlay);
+    } else {
+        $overlay.css({ display: 'flex', width: imgWidth });
+    }
+    var pdfBase64 = raw.startsWith('data:') ? (raw.split(',')[1] || '') : raw;
+    $overlay.html(
+        '<svg width="44" height="56" viewBox="0 0 44 56" xmlns="http://www.w3.org/2000/svg">' +
+        '<rect x="1" y="1" width="42" height="54" rx="4" fill="#fff" stroke="#ddd" stroke-width="1.5"/>' +
+        '<polyline points="28,1 28,16 43,16" fill="none" stroke="#ddd" stroke-width="1.5"/>' +
+        '<rect x="4" y="28" width="36" height="16" rx="2" fill="#e53935" opacity="0.9"/>' +
+        '<text x="22" y="40" font-size="10" font-family="Arial,sans-serif" fill="#fff" text-anchor="middle" font-weight="700">PDF</text></svg>' +
+        '<span style="font-size:11px;color:#888;font-family:Segoe UI,Arial,sans-serif;">PDF Document</span>' +
+        '<button type="button" class="pdf-view-btn" style="font-size:11px;color:#1a6cc4;border:1px solid #1a6cc4;border-radius:10px;padding:3px 14px;background:#fff;cursor:pointer;font-weight:500;font-family:Segoe UI,Arial,sans-serif;">View PDF</button>'
+    ).css('display', 'flex');
+    $overlay.find('.pdf-view-btn').off('click').on('click', function () {
+        var bytes = atob(pdfBase64);
+        var arr = new Uint8Array(bytes.length);
+        for (var i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+        var blob = new Blob([arr], { type: 'application/pdf' });
+        var url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+    });
+}
+
+function updatePassportImage() {
+    var value = ($('.passportBase64Lookup textarea').val() || '').trim();
+    if (!value) return;
+    renderImgOrPdf($('#passportImg'), value);
+}
+
+function updateReturnTicketImage() {
+    var value = ($('.returnTicketBase64Lookup textarea').val() || '').trim();
+    if (!value) return;
+    renderImgOrPdf($('#returnTicketImg'), value);
+}
+
+function updateProfilePicImage() {
+    var value = ($('.photoBase64Lookup textarea').val() || '').trim();
+    if (!value) return;
+    renderImgOrPdf($('#profilePicImg'), value);
+}
+
+function saveAndClose(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var $btn = $(e.target);
+    $btn.prop('disabled', true).text('Saving...');
+
+    var token = new URL(window.location.href).searchParams.get('token') || '';
+
+    $('.Submit').trigger('click');
+
+    waitForLookupComplete(function () {
+        window.location.href = groupListUrl;
+    });
+    return false;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Document Ready
+// ═════════════════════════════════════════════════════════════════════════════
+
 $(document).ready(function () {
-    $('.Submit').hide();
+    $('.Submit').hide(); 
+    $('#lookup1609').hide(); //add group memebr Lookup Autofill field
 
-    /* ── Token injection ───────────────────────────────────────── */
-    var url    = new URL(window.location.href);
-    var token  = url.searchParams.get('token');
-    var userId = url.searchParams.get('userId');
-    var userPassport = url.searchParams.get('passportNumber');
-    var selectedGroupId = url.searchParams.get('groupId');
+     /* ── Page Url Extraction ───────────────────────────────────────── */
+    let url             = new URL(window.location.href);  
+    let sessionToken    = url.searchParams.get('session');
+    let type            = url.searchParams.get('type');
+    let category        = url.searchParams.get('category');
+    let subcategory     = url.searchParams.get('subcategory');
+    let purpose         = url.searchParams.get('purpose');
+    let family          = url.searchParams.get('family');
+    let group           = url.searchParams.get('group');
+    let groupId         = url.searchParams.get('groupId');
+    let passportNumber  = url.searchParams.get('userPassport');
+    let userId          = url.searchParams.get('userId');
 
-    if (token) {
+    groupListUrl = baseUrl  
+        + '?session='     + encodeURIComponent(sessionToken)
+        + '&type='        + encodeURIComponent(type)
+        + '&category='    + encodeURIComponent(category)      
+        + '&subcategory=' + encodeURIComponent(subcategory)
+        + '&purpose='     + encodeURIComponent(purpose)       
+        + '&family='      + encodeURIComponent(family || '')
+        + '&group='       + encodeURIComponent(group || '')
+        + '&passport='    + encodeURIComponent(passportNumber || '')
+        + '&groupId='     + encodeURIComponent(groupId || '');
+
+    $('.groupMemberListUrl input').val(groupListUrl);
+
+    if (sessionToken) {
         setTimeout(function () {
-            $('.sessionToken input').val(token).change();
-            $('.personId input').val(userId).change();
-            $('.passportNumber input').val(userPassport).change().attr('readonly', true);
-            $('.groupId input').val(selectedGroupId).change();
-            $('.groupMemberListUrl input').val('https://lf.automatenow.co.za/Forms/ListGroupMembers?token=' + encodeURIComponent(token) + '&groupId=' + encodeURIComponent(selectedGroupId));
+            $('.session input').val(sessionToken).change();
+
         }, 1000);
+    }
+       
+    if (type) {
+        setTimeout(function () {
+            $('.type input').val(type).change();
+        }, 1000);
+    }
+
+    if (category) {
+        setTimeout(function () {
+            $('.category input').val(category).change();
+        }, 1000);
+    }
+
+    if (subcategory) {
+        setTimeout(function () {
+            $('.subcategory input').val(subcategory).change();
+        }, 1000);
+    }
+    
+    if (purpose) {
+        setTimeout(function () {
+            $('.purpose input').val(purpose).change();
+        }, 1000);
+    }
+    
+    if (family) {
+        setTimeout(function () {
+            $('.family input').val(family).change();
+        }, 1000);
+    }
+    
+    if (group) {
+        setTimeout(function () {
+            $('.group input').val(group).change();
+        }, 1000);
+    }
+    
+    if (groupId) {
+        setTimeout(function () {
+            $('.groupId input').val(groupId).change();
+        }, 1000);
+    }
+    
+    if (userId) {
+        setTimeout(function () {
+            $('.personId input').val(userId).change();
+        }, 1000);
+    }
+    
+    if (passportNumber) {
+        setTimeout(function () {
+            $('.passportNumber input').val(passportNumber);
+            $('.passportNumber input').trigger('change').trigger('input');
+        }, 2000);
     }
 
     $(document).on('click', 'button:contains("Return To List")', function () {
@@ -182,122 +348,7 @@ $(document).ready(function () {
     setTimeout(function() { styleUploadButtons(); buildImageGrid(); styleCollectionUploadButtons(); }, 500);
     setTimeout(function() { styleUploadButtons(); buildImageGrid(); styleCollectionUploadButtons(); }, 1500);
     setTimeout(function() { styleUploadButtons(); buildImageGrid(); styleCollectionUploadButtons(); }, 3000);
-
-});// ════════════════════════════════════════════════════════════════════════════
-//  Callback Functions
-// ════════════════════════════════════════════════════════════════════════════
-
-function renderImgOrPdf($img, b64) {
-    if (!b64 || b64.length <= 10) return;
-    var raw = b64.trim();
-    var stripped = raw.startsWith('data:') ? (raw.split(',')[1] || '') : raw;
-    var isPdf = raw.startsWith('data:application/pdf') || stripped.startsWith('JVBERi0');
-    var overlayId = $img.attr('id') + '-pdf-overlay';
-    var $overlay = $('#' + overlayId);
-
-    if (!isPdf) {
-        var src = raw.startsWith('data:') ? raw : 'data:image/jpeg;base64,' + raw;
-        $img.attr('src', src).show();
-        $overlay.hide();
-        return;
-    }
-
-    var imgWidth = $img[0].style.width || ($img.outerWidth() > 0 ? $img.outerWidth() + 'px' : '280px');
-    $img.hide();
-    if (!$overlay.length) {
-        $overlay = $('<div></div>').attr('id', overlayId).css({
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', width: imgWidth, minHeight: '160px',
-            gap: '8px', border: '1px solid #ddd', borderRadius: '4px',
-            background: '#f8f9fa', boxSizing: 'border-box'
-        });
-        $img.after($overlay);
-    } else {
-        $overlay.css({ display: 'flex', width: imgWidth });
-    }
-    var pdfBase64 = raw.startsWith('data:') ? (raw.split(',')[1] || '') : raw;
-    $overlay.html(
-        '<svg width="44" height="56" viewBox="0 0 44 56" xmlns="http://www.w3.org/2000/svg">' +
-        '<rect x="1" y="1" width="42" height="54" rx="4" fill="#fff" stroke="#ddd" stroke-width="1.5"/>' +
-        '<polyline points="28,1 28,16 43,16" fill="none" stroke="#ddd" stroke-width="1.5"/>' +
-        '<rect x="4" y="28" width="36" height="16" rx="2" fill="#e53935" opacity="0.9"/>' +
-        '<text x="22" y="40" font-size="10" font-family="Arial,sans-serif" fill="#fff" text-anchor="middle" font-weight="700">PDF</text></svg>' +
-        '<span style="font-size:11px;color:#888;font-family:Segoe UI,Arial,sans-serif;">PDF Document</span>' +
-        '<button type="button" class="pdf-view-btn" style="font-size:11px;color:#1a6cc4;border:1px solid #1a6cc4;border-radius:10px;padding:3px 14px;background:#fff;cursor:pointer;font-weight:500;font-family:Segoe UI,Arial,sans-serif;">View PDF</button>'
-    ).css('display', 'flex');
-    $overlay.find('.pdf-view-btn').off('click').on('click', function () {
-        var bytes = atob(pdfBase64);
-        var arr = new Uint8Array(bytes.length);
-        for (var i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-        var blob = new Blob([arr], { type: 'application/pdf' });
-        var url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
-    });
-}
-
-function updatePassportImage() {
-    var value = ($('.passportBase64Lookup textarea').val() || '').trim();
-    if (!value) return;
-    renderImgOrPdf($('#passportImg'), value);
-}
-
-function updateReturnTicketImage() {
-    var value = ($('.returnTicketBase64Lookup textarea').val() || '').trim();
-    if (!value) return;
-    renderImgOrPdf($('#returnTicketImg'), value);
-}
-
-function updateProfilePicImage() {
-    var value = ($('.photoBase64Lookup textarea').val() || '').trim();
-    if (!value) return;
-    renderImgOrPdf($('#profilePicImg'), value);
-}
-
-function saveAndClose(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    var $btn = $(e.target);
-    $btn.prop('disabled', true).text('Saving...');
-
-    var token = new URL(window.location.href).searchParams.get('token') || '';
-
-    $('.Submit').trigger('click');
-
-    waitForLookupComplete(function () {
-        window.location.href = 'https://lf.automatenow.co.za/Forms/GroupList'
-            + '?token=' + encodeURIComponent(token);
-    });
-    return false;
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  DOCUMENT READY
-// ═════════════════════════════════════════════════════════════════════════════
-
-$(document).ready(function () {
-  $('.Submit').hide(); 
-  $('#lookup1609').hide(); //add group memebr Lookup Autofill field
-
-  /* ── Token injection ─────────────────────────────────────── */
-  var url      = new URL(window.location.href);
-  var token    = url.searchParams.get('token');
-  var groupId = url.searchParams.get('groupId');
-  var passportNumber = url.searchParams.get('passportNumber');
-  var baseUrl = 'https://lf.automatenow.co.za/Forms/ListGroupMembers';
-  var previousUrl = baseUrl + '?token=' + encodeURIComponent(token) + '&groupId=' + encodeURIComponent(groupId);
-
-
-
-  if (token) {
-    setTimeout(function () {
-        $('.sessionToken input').val(token).change();
-        $('.groupId input').val(groupId).change();
-        $('.passportNumber input').val(passportNumber).change();
-        $('.groupListUrl input').val(previousUrl);
-    }, 1000);
-  }
+    
   /**
    * The Add Group Member form has a field where you can paste a base64 string of the passport image, 
    * and it will render it on the page. This is to allow copying the image data from the List Group Members page 
@@ -321,6 +372,11 @@ $(document).ready(function () {
         if (profilePic !== lastProfilePic) { lastProfilePic = profilePic; updateProfilePicImage();   }
     }, 500);
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Event Listners
+// ═════════════════════════════════════════════════════════════════════════════
+
 
 $(document).on('change', '.genderLookup input', function () {
     let gender = $(this).val().trim();
