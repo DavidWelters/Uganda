@@ -105,6 +105,7 @@ function editFamilyMember() {
         editCheckbox.data("btn-injected", true);
 
         $cell.find('fieldset, .choice').hide();
+        $cell.find('.cf-col-label').css('visibility', 'hidden');
         $cell.find('.cf-field').css({ height: '0', overflow: 'hidden', margin: '0', padding: '0' });
 
         let $btn = makeEditButton();
@@ -112,13 +113,35 @@ function editFamilyMember() {
 
         $btn.on("click", function () {
             let personId     = $row.find('.personId input').val() || '';
-            let sessionToken = $(F.sessionToken + ' input').val() || '';
+            let sessionToken = $('.session input').val() || '';
+            let type  = $('.type input').val() || '';
+            let category = $('.category input').val() || '';
+            let subcategory = $('.subcategory input').val() || '';
+            let purpose = $('.purpose input').val() || '';
+            let family = $('.family input').val() || '';
+            let group = $('.group input').val() || '';
 
-            if (!personId) { alert('Person ID unknown.'); return; }
+            if (!personId) { 
+                alert('Person ID unknown.'); 
+                return; 
+            }
 
-            window.location.href = 'https://pinpoint.web.za/Forms/ManageFamily'
-                + '?token='    + encodeURIComponent(sessionToken)
-                + '&personId=' + encodeURIComponent(personId);
+            let redirectUrl = 'https://pinpoint.web.za/Forms/EditFamily'
+                + '?session='     + encodeURIComponent(sessionToken)
+                + '&type='        + encodeURIComponent(type)
+                + '&category='    + encodeURIComponent(category)      
+                + '&subcategory=' + encodeURIComponent(subcategory)
+                + '&purpose='     + encodeURIComponent(purpose)       
+                + '&family='      + encodeURIComponent(family || '')
+                + '&group='       + encodeURIComponent(group || '')
+                + '&personId='    + encodeURIComponent(personId);
+
+            // window.location.href = 'https://pinpoint.web.za/Forms/EditFamily'
+            //     + '?token='    + encodeURIComponent(sessionToken)
+            //     + '&personId=' + encodeURIComponent(personId);
+             
+            // Redirect to the new URL in the same window
+            window.location.href = redirectUrl;
         });
     });
 }
@@ -134,6 +157,7 @@ function removeFamilyMember() {
         $checkbox.data("btn-injected", true);
 
         $cell.find('fieldset, .choice').hide();
+        $cell.find('.cf-col-label').css('visibility', 'hidden');
         $cell.find('.cf-field').css({ height: '0', overflow: 'hidden', margin: '0', padding: '0' });
 
         let $btn = makeRemoveButton();
@@ -456,7 +480,7 @@ $(document).ready(function(){
     var group = url.searchParams.get('group');
 
     console.log('URL params:', { sessionToken, type, category, subcategory, purpose, family, group });
-
+    
     if (sessionToken) {
         setTimeout(function () {
             $('.session input').val(sessionToken).change();

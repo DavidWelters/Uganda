@@ -51,21 +51,38 @@ function editFamilyMember() {
 
         $btn.on("click", function () {
             let personId     = $row.find('.personId input').val() || '';
-            let sessionToken = $('.sessionToken input').val()     || '';
+            let sessionToken = $('.session input').val() || '';
+            let type  = $('.type input').val() || '';
+            let category = $('.category input').val() || '';
+            let subcategory = $('.subcategory input').val() || '';
+            let purpose = $('.purpose input').val() || '';
+            let family = $('.family input').val() || '';
+            let group = $('.group input').val() || '';
 
             if (!personId) {
                 alert('Person Id Unknown.');
                 return;
             }
 
-            let redirectUrl = 'https://lf.automatenow.co.za/Forms/ManageFamily?token=' + sessionToken + '&personId=' + personId;
+            let redirectUrl = 'https://lf.automatenow.co.za/Forms/ManageFamily'
+                + '?session='     + encodeURIComponent(sessionToken)
+                + '&type='        + encodeURIComponent(type)
+                + '&category='    + encodeURIComponent(category)      
+                + '&subcategory=' + encodeURIComponent(subcategory)
+                + '&purpose='     + encodeURIComponent(purpose)       
+                + '&family='      + encodeURIComponent(family || '')
+                + '&group='       + encodeURIComponent(group || '')
+                + '&personId='    + encodeURIComponent(personId);
 
-            let width  = 800;
-            let height = 800;
-            let left   = (window.innerWidth  / 2) - (width  / 2);
-            let top    = (window.innerHeight / 2) - (height / 2);
+            // let width  = 800;
+            // let height = 800;
+            // let left   = (window.innerWidth  / 2) - (width  / 2);
+            // let top    = (window.innerHeight / 2) - (height / 2);
 
-            window.open(redirectUrl, 'newwindow', `width=${width},height=${height},top=${top},left=${left}`);
+            // window.open(redirectUrl, 'newwindow', `width=${width},height=${height},top=${top},left=${left}`);
+
+            // Redirect to the new URL in the same window
+            window.location.href = redirectUrl;
         });
     });
 }

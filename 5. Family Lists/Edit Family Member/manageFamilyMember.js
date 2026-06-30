@@ -10,21 +10,73 @@ $(document).ready(function () {
     });
 
     /* ── Token injection ─────────────────────────────────────── */
-    var url      = new URL(window.location.href);
-    var token    = url.searchParams.get('token');
-    var personId = url.searchParams.get('personId');
-    if (token) {
+    let url      = new URL(window.location.href);
+    let session    = url.searchParams.get('session');
+    let personId = url.searchParams.get('personId');
+    let type  = url.searchParams.get('type');
+    let category = url.searchParams.get('category');
+    let subcategory = url.searchParams.get('subcategory');
+    let purpose = url.searchParams.get('purpose');
+    let family = url.searchParams.get('family');
+    let group = url.searchParams.get('group');
+
+      
+    let familyListUrl = 'https://pinpoint.web.za/Forms/FamilyMembers'
+        + '?session='     + encodeURIComponent(session)
+        + '&type='        + encodeURIComponent(type)
+        + '&category='    + encodeURIComponent(category)      
+        + '&subcategory=' + encodeURIComponent(subcategory)
+        + '&purpose='     + encodeURIComponent(purpose)       
+        + '&family='      + encodeURIComponent(family || '')
+        + '&group='       + encodeURIComponent(group || '');
+
+    if (session && personId) {
         setTimeout(function () {
-            $('.sessionToken input').val(token).change();
-            $('.userId input').val(personId).change();
-            $('.familyListUrl input').val('https://lf.automatenow.co.za/Forms/FamilyMembers?token=' + encodeURIComponent(token)).change();
+            $('.session input').val(session).change();
+            $('.userId input, .personid input').val(personId).change();
+            $('.familyListUrl input').val(familyListUrl).change(); 
+            
+            if (type) {
+                setTimeout(function () {
+                    $('.type input').val(type).change();
+                }, 1000);
+            }
+
+            if (category) {
+                setTimeout(function () {
+                    $('.category input').val(category).change();
+                }, 1000);
+            }
+
+            if (subcategory) {
+                setTimeout(function () {
+                    $('.subcategory input').val(subcategory).change();
+                }, 1000);
+            }
+            
+            if (purpose) {
+                setTimeout(function () {
+                    $('.purpose input').val(purpose).change();
+                }, 1000);
+            }
+            
+            if (family) {
+                setTimeout(function () {
+                    $('.family input').val(family).change();
+                }, 1000);
+            }
+            
+            if (group) {
+                setTimeout(function () {
+                    $('.group input').val(group).change();
+                }, 1000);
+            }
         }, 1000);
     }
 
     /* ── Back button ─────────────────────────────────────────── */
     $(document).on('click', 'button:contains("Back")', function () {
-        window.location.href = 'https://lf.automatenow.co.za/Forms/FamilyMembers'
-            + '?token=' + encodeURIComponent(token || '');
+        window.location.href = familyListUrl;
     });
 
     /* ── Base64 Passport Image Renderer ─────────────────────── */
